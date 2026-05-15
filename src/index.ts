@@ -9,6 +9,15 @@ export { WebToolsMCP };
 
 const app = new Hono<{ Bindings: Env }>();
 
+app.use('*', async (c, next) => {
+	const provided =
+		c.req.header('authorization')?.replace(/^Bearer\s+/i, '') ?? new URL(c.req.url).searchParams.get('key');
+	if (provided !== c.env.API_KEY) {
+		throw new HTTPException(401, { message: 'Unauthorized' });
+	}
+	await next();
+});
+
 app.all('/mcp', (c) => WebToolsMCP.serve('/mcp').fetch(c.req.raw, c.env, c.executionCtx as ExecutionContext<unknown>));
 
 function extractTarget(c: { req: { url: string } }, prefix: string): string {
