@@ -12,6 +12,10 @@
 	},
 	"upload_source_maps": true,
 	"compatibility_flags": ["nodejs_compat"],
+	"durable_objects": {
+		"bindings": [{ "class_name": "WebToolsMCP", "name": "MCP_OBJECT" }],
+	},
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["WebToolsMCP"] }],
 	// Secrets (set via `wrangler secret put` or `.dev.vars` locally):
 	// - CLOUDFLARE_ACCOUNT_ID: your Cloudflare account ID
 	// - CLOUDFLARE_API_TOKEN: API token with "Browser Rendering - Edit" permission

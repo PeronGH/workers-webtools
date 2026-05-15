@@ -1,33 +1,20 @@
 import { Hono } from 'hono';
-import Cloudflare from 'cloudflare';
+import { fetchMarkdown } from './fetchMarkdown';
+import { WebToolsMCP } from './mcp';
 
-type Bindings = Env & {
-	CLOUDFLARE_ACCOUNT_ID: string;
-	CLOUDFLARE_API_TOKEN: string;
-};
+export { WebToolsMCP };
 
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Env }>();
+
+app.all('/mcp', (c) => WebToolsMCP.serve('/mcp').fetch(c.req.raw, c.env, c.executionCtx as ExecutionContext<unknown>));
 
 app.get('/fetch/*', async (c) => {
-	const marker = '/fetch/';
-	const idx = c.req.url.indexOf(marker);
-	const target = c.req.url.slice(idx + marker.length);
-
+	const target = c.req.url.slice(c.req.url.indexOf('/fetch/') + '/fetch/'.length);
 	if (!/^https?:\/\//i.test(target)) {
 		return c.text('Target URL must start with http:// or https://', 400);
 	}
-
-	const client = new Cloudflare({ apiToken: c.env.CLOUDFLARE_API_TOKEN });
-	const markdown = await client.browserRendering.markdown.create({
-		account_id: c.env.CLOUDFLARE_ACCOUNT_ID,
-		url: target,
-		gotoOptions: { waitUntil: 'networkidle2', timeout: 10000 },
-		bestAttempt: true,
-	});
-
-	return c.body(markdown, 200, {
-		'Content-Type': 'text/markdown; charset=utf-8',
-	});
+	const markdown = await fetchMarkdown(target, c.env);
+	return c.body(markdown, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
 });
 
 export default app;

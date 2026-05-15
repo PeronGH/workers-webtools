@@ -11,17 +11,17 @@ For all limits and quotas, retrieve from the product's `/platform/limits/` page.
 
 ## Package Manager
 
-This repo uses **Bun** (see `bun.lock`). Use `bun` / `bunx` for all package and script commands — do not use `npm`, `npx`, `pnpm`, or `yarn`.
+This repo uses **Bun** (see `bun.lock`) for package operations. Wrangler is installed globally, so invoke it directly — not via `bunx`/`npx`.
 
-| Command                | Purpose                   |
-| ---------------------- | ------------------------- |
-| `bun install`          | Install dependencies      |
-| `bun add <pkg>`        | Add a dependency          |
-| `bunx wrangler dev`    | Local development         |
-| `bunx wrangler deploy` | Deploy to Cloudflare      |
-| `bunx wrangler types`  | Generate TypeScript types |
+| Command             | Purpose                   |
+| ------------------- | ------------------------- |
+| `bun install`       | Install dependencies      |
+| `bun add <pkg>`     | Add a dependency          |
+| `wrangler dev`      | Local development         |
+| `wrangler deploy`   | Deploy to Cloudflare      |
+| `wrangler types`    | Generate TypeScript types |
 
-Run `bunx wrangler types` after changing bindings in wrangler.jsonc.
+Run `wrangler types` after changing bindings in wrangler.jsonc.
 
 ## Node.js Compatibility
 
