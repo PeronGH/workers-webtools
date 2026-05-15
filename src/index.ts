@@ -23,6 +23,8 @@ app.get('/fetch/*', async (c) => {
 	const markdown = await client.browserRendering.markdown.create({
 		account_id: c.env.CLOUDFLARE_ACCOUNT_ID,
 		url: target,
+		gotoOptions: { waitUntil: 'networkidle2', timeout: 10000 },
+		bestAttempt: true,
 	});
 
 	return c.body(markdown, 200, {
