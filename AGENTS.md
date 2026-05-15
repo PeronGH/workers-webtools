@@ -9,15 +9,19 @@ STOP. Your knowledge of Cloudflare Workers APIs and limits may be outdated. Alwa
 
 For all limits and quotas, retrieve from the product's `/platform/limits/` page. eg. `/workers/platform/limits`
 
-## Commands
+## Package Manager
 
-| Command | Purpose |
-|---------|---------|
-| `npx wrangler dev` | Local development |
-| `npx wrangler deploy` | Deploy to Cloudflare |
-| `npx wrangler types` | Generate TypeScript types |
+This repo uses **Bun** (see `bun.lock`). Use `bun` / `bunx` for all package and script commands — do not use `npm`, `npx`, `pnpm`, or `yarn`.
 
-Run `wrangler types` after changing bindings in wrangler.jsonc.
+| Command                | Purpose                   |
+| ---------------------- | ------------------------- |
+| `bun install`          | Install dependencies      |
+| `bun add <pkg>`        | Add a dependency          |
+| `bunx wrangler dev`    | Local development         |
+| `bunx wrangler deploy` | Deploy to Cloudflare      |
+| `bunx wrangler types`  | Generate TypeScript types |
+
+Run `bunx wrangler types` after changing bindings in wrangler.jsonc.
 
 ## Node.js Compatibility
 

@@ -1,18 +1,33 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Bind resources to your worker in `wrangler.jsonc`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+import { Hono } from 'hono';
+import Cloudflare from 'cloudflare';
 
-export default {
-	async fetch(request, env, ctx): Promise<Response> {
-		return new Response("Hello World!");
-	},
-} satisfies ExportedHandler<Env>;
+type Bindings = Env & {
+	CLOUDFLARE_ACCOUNT_ID: string;
+	CLOUDFLARE_API_TOKEN: string;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
+
+app.get('/', (c) => c.text('GET /fetch/<http|https>://<url> — returns rendered Markdown'));
+
+app.get('/fetch/*', async (c) => {
+	const marker = '/fetch/';
+	const idx = c.req.url.indexOf(marker);
+	const target = c.req.url.slice(idx + marker.length);
+
+	if (!/^https?:\/\//i.test(target)) {
+		return c.text('Target URL must start with http:// or https://', 400);
+	}
+
+	const client = new Cloudflare({ apiToken: c.env.CLOUDFLARE_API_TOKEN });
+	const markdown = await client.browserRendering.markdown.create({
+		account_id: c.env.CLOUDFLARE_ACCOUNT_ID,
+		url: target,
+	});
+
+	return c.body(markdown, 200, {
+		'Content-Type': 'text/markdown; charset=utf-8',
+	});
+});
+
+export default app;
