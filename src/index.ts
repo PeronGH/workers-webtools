@@ -8,8 +8,6 @@ type Bindings = Env & {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-app.get('/', (c) => c.text('GET /fetch/<http|https>://<url> — returns rendered Markdown'));
-
 app.get('/fetch/*', async (c) => {
 	const marker = '/fetch/';
 	const idx = c.req.url.indexOf(marker);
