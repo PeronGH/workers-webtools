@@ -5,7 +5,7 @@ export async function fetchMarkdown(url: string, env: Env): Promise<string> {
 	return client.browserRendering.markdown.create({
 		account_id: env.CLOUDFLARE_ACCOUNT_ID,
 		url,
-		gotoOptions: { waitUntil: 'networkidle2', timeout: 10000 },
+		gotoOptions: { waitUntil: 'networkidle0', timeout: 15000 },
 		bestAttempt: true,
 	});
 }
