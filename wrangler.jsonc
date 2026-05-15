@@ -12,6 +12,7 @@
 	},
 	"upload_source_maps": true,
 	"compatibility_flags": ["nodejs_compat"],
+	"ai": { "binding": "AI" },
 	"durable_objects": {
 		"bindings": [{ "class_name": "WebToolsMCP", "name": "MCP_OBJECT" }],
 	},

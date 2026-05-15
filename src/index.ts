@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { askAboutContent } from './askAboutContent';
 import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
 import { WebToolsMCP } from './mcp';
@@ -22,6 +23,14 @@ app.get('/fetch/*', async (c) => {
 	const target = extractTarget(c, '/fetch/');
 	const markdown = await fetchMarkdown(target, c.env);
 	return c.body(markdown, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
+});
+
+app.post('/ask/*', async (c) => {
+	const target = extractTarget(c, '/ask/');
+	const prompt = await c.req.text();
+	const markdown = await fetchMarkdown(target, c.env);
+	const answer = await askAboutContent(markdown, target, prompt, c.env);
+	return c.body(answer, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
 });
 
 app.get('/screenshot/*', async (c) => {
