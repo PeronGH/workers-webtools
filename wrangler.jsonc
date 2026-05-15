@@ -12,12 +12,8 @@
 	},
 	"upload_source_maps": true,
 	"compatibility_flags": ["nodejs_compat"],
-	"vars": {
-		// Public Cloudflare account ID used by the Browser Rendering REST API.
-		// Override locally via `.dev.vars`; set in dashboard or `wrangler deploy --var` for production.
-		"CLOUDFLARE_ACCOUNT_ID": "",
-	},
 	// Secrets (set via `wrangler secret put` or `.dev.vars` locally):
+	// - CLOUDFLARE_ACCOUNT_ID: your Cloudflare account ID
 	// - CLOUDFLARE_API_TOKEN: API token with "Browser Rendering - Edit" permission
 	/**
 	 * Static Assets
