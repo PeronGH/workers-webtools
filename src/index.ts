@@ -1,8 +1,7 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { Buffer } from 'node:buffer';
 import { fetchMarkdown } from './fetchMarkdown';
-import { fetchSnapshot } from './fetchSnapshot';
+import { fetchScreenshot } from './fetchScreenshot';
 import { WebToolsMCP } from './mcp';
 
 export { WebToolsMCP };
@@ -25,10 +24,10 @@ app.get('/fetch/*', async (c) => {
 	return c.body(markdown, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
 });
 
-app.get('/snapshot/*', async (c) => {
-	const target = extractTarget(c, '/snapshot/');
-	const base64 = await fetchSnapshot(target, c.env);
-	return c.body(Buffer.from(base64, 'base64'), 200, { 'Content-Type': 'image/png' });
+app.get('/screenshot/*', async (c) => {
+	const target = extractTarget(c, '/screenshot/');
+	const png = await fetchScreenshot(target, c.env);
+	return c.body(png, 200, { 'Content-Type': 'image/png' });
 });
 
 export default app;

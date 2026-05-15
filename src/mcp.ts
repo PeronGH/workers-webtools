@@ -1,8 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
+import { Buffer } from 'node:buffer';
 import { z } from 'zod';
 import { fetchMarkdown } from './fetchMarkdown';
-import { fetchSnapshot } from './fetchSnapshot';
+import { fetchScreenshot } from './fetchScreenshot';
 
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({ name: 'webtools', version: '0.1.0' });
@@ -21,14 +22,15 @@ export class WebToolsMCP extends McpAgent<Env> {
 		);
 
 		this.server.registerTool(
-			'snapshot',
+			'screenshot',
 			{
 				description: 'Take a PNG screenshot of a webpage.',
 				inputSchema: { url: z.string().url() },
 			},
 			async ({ url }) => {
-				const screenshot = await fetchSnapshot(url, this.env);
-				return { content: [{ type: 'image', data: screenshot, mimeType: 'image/png' }] };
+				const png = await fetchScreenshot(url, this.env);
+				const data = Buffer.from(png).toString('base64');
+				return { content: [{ type: 'image', data, mimeType: 'image/png' }] };
 			},
 		);
 	}
