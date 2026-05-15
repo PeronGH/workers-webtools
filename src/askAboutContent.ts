@@ -1,5 +1,4 @@
-// Use K2.5's typing as a stand-in until workerd's AI catalog ships K2.6.
-const MODEL = '@cf/moonshotai/kimi-k2.6' as '@cf/moonshotai/kimi-k2.5';
+const MODEL = '@cf/moonshotai/kimi-k2.6';
 
 export async function askAboutContent(content: string, url: string, prompt: string, env: Env): Promise<string> {
 	const response = await env.AI.run(MODEL, {
@@ -13,6 +12,7 @@ export async function askAboutContent(content: string, url: string, prompt: stri
 			},
 			{ role: 'user', content: prompt },
 		],
+		chat_template_kwargs: { thinking: false },
 	});
-	return response.choices[0].message.content ?? '';
+	return (response as AiModels['@cf/moonshotai/kimi-k2.5']['postProcessedOutputs']).choices[0].message.content ?? '';
 }

@@ -13,7 +13,9 @@ export class WebToolsMCP extends McpAgent<Env> {
 		this.server.registerTool(
 			'fetch',
 			{
-				description: 'Fetch a webpage and return its rendered Markdown.',
+				description:
+					'Fetch a webpage and return its rendered Markdown. ' +
+					'Output can be very long — prefer `ask` for specific questions; use `fetch` only when you actually need the full content.',
 				inputSchema: { url: z.string().url() },
 			},
 			async ({ url }) => {
