@@ -7,26 +7,24 @@ export type SearchResult = {
 };
 
 export async function search(query: string, page: number, env: Env): Promise<SearchResult[]> {
-	const params = new URLSearchParams({
-		q: query,
-		page: String(page),
-		language: 'english',
-		segment: 'startpage.web',
-	});
-	const url = `https://www.startpage.com/do/search?${params}`;
+	const params = new URLSearchParams({ q: query, source: 'web' });
+	if (page > 1) {
+		// Brave Search paginates by 0-based offset, ~20 results per page.
+		params.set('offset', String((page - 1) * 20));
+	}
+	const url = `https://search.brave.com/search?${params}`;
 
 	const browser = await launch(env.BROWSER);
 	try {
 		const p = await browser.newPage();
-		await p.goto(url, { waitUntil: 'networkidle', timeout: 15000 }).catch(() => {});
-		const all = await p.$$eval('.result', (items) =>
+		await p.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {});
+		return await p.$$eval('div.snippet[data-type="web"]', (items) =>
 			items.map((item) => ({
-				title: item.querySelector('.wgl-title')?.textContent?.trim() ?? '',
-				url: item.querySelector('a.result-link')?.getAttribute('href') ?? '',
-				snippet: item.querySelector('.description')?.textContent?.trim() ?? '',
+				title: item.querySelector('.search-snippet-title')?.textContent?.trim() ?? '',
+				url: item.querySelector('a.l1')?.getAttribute('href') ?? '',
+				snippet: item.querySelector('.generic-snippet .content')?.textContent?.trim() ?? '',
 			})),
 		);
-		return all.filter((r) => r.title && r.url);
 	} finally {
 		await browser.close();
 	}

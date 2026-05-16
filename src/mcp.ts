@@ -58,7 +58,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 		this.server.registerTool(
 			'search',
 			{
-				description: 'Search the web via Startpage.',
+				description: 'Search the web.',
 				inputSchema: { query: z.string(), page: z.number().int().min(1).default(1) },
 				outputSchema: {
 					results: z.array(
