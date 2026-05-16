@@ -11,7 +11,7 @@ import { search } from './search';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.2.2',
+		version: '0.2.3',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -21,7 +21,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			{
 				description:
 					'Fetch a webpage and return its rendered Markdown. ' +
-					'Output can be very long due to navigation items; use `fetch` only when you actually need the full content. ' +
+					'Output includes navigation, sidebars, and footer chrome alongside the main content, so it can be long. ' +
 					'Cannot handle PDFs or other binary content.',
 				inputSchema: { url: z.url() },
 			},
@@ -34,7 +34,10 @@ export class WebToolsMCP extends McpAgent<Env> {
 		this.server.registerTool(
 			'screenshot',
 			{
-				description: 'Take a full-page PNG screenshot of a webpage. Use only when you want visual identity alone; if you also care about the content, use `snapshot`.',
+				description:
+					'Take a full-page PNG screenshot of a webpage. ' +
+					'Use only when you want visual identity alone; ' +
+					'if you also care about the content, use `snapshot`.',
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
@@ -66,7 +69,8 @@ export class WebToolsMCP extends McpAgent<Env> {
 			{
 				description:
 					'Run `fetch` on the URL under the hood, then have an LLM respond to your prompt about its content. ' +
-					'Slow due to the LLM round trip; if the page is small or your question is broad, prefer `fetch` directly.',
+					'Slow due to the LLM round trip; ' +
+					'use when you want a focused answer instead of the raw page Markdown.',
 				inputSchema: { url: z.url(), prompt: z.string() },
 			},
 			async ({ url, prompt }) => {
