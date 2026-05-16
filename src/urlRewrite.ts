@@ -1,19 +1,21 @@
 import type { PageRequest } from './browser';
 
-export const URL_REWRITES: readonly (readonly [RegExp, (url: string) => string])[] = [
-	[
-		/^https?:\/\/(?:[a-z0-9-]+\.)+wikipedia\.org\/(?:wiki\/|w\/index\.php\b)/i,
-		(url) => {
-			const source = new URL(url);
-			const title = source.pathname.startsWith('/wiki/')
-				? decodeURIComponent(source.pathname.slice('/wiki/'.length))
-				: source.searchParams.get('title');
-			if (!title) return url;
+type UrlMatcher = (url: URL) => boolean;
+type UrlRewrite = (url: URL) => string;
 
-			const rewritten = new URL('/w/index.php', source.origin);
+export const URL_REWRITES: readonly (readonly [UrlMatcher, UrlRewrite])[] = [
+	[
+		(url) => url.hostname.endsWith('.wikipedia.org') && (url.pathname.startsWith('/wiki/') || url.pathname === '/w/index.php'),
+		(url) => {
+			const title = url.pathname.startsWith('/wiki/')
+				? decodeURIComponent(url.pathname.slice('/wiki/'.length))
+				: url.searchParams.get('title');
+			if (!title) return url.toString();
+
+			const rewritten = new URL('/w/index.php', url.origin);
 			rewritten.searchParams.set('title', title);
 			rewritten.searchParams.set('action', 'raw');
-			const oldid = source.searchParams.get('oldid');
+			const oldid = url.searchParams.get('oldid');
 			if (oldid) rewritten.searchParams.set('oldid', oldid);
 			return rewritten.toString();
 		},
@@ -21,8 +23,9 @@ export const URL_REWRITES: readonly (readonly [RegExp, (url: string) => string])
 ];
 
 export function rewriteUrl(url: string): string {
-	for (const [pattern, rewrite] of URL_REWRITES) {
-		if (pattern.test(url)) return rewrite(url);
+	const parsed = new URL(url);
+	for (const [matches, rewrite] of URL_REWRITES) {
+		if (matches(parsed)) return rewrite(parsed);
 	}
 	return url;
 }
