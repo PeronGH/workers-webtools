@@ -3,13 +3,22 @@ import { launch } from '@cloudflare/playwright';
 export async function fetchMarkdown(url: string, env: Env): Promise<string> {
 	const browser = await launch(env.BROWSER);
 	let html: string;
+	let contentType: string | undefined;
 	try {
 		const page = await browser.newPage();
+		let response: Awaited<ReturnType<typeof page.goto>> = null;
 		try {
-			await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+			response = await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
 		} catch {
-			// Best-attempt: return whatever rendered by the timeout.
+			// Best-attempt: use whatever rendered by the timeout.
 		}
+
+		contentType = response?.headers()['content-type']?.split(';')[0]?.trim().toLowerCase();
+		const isConvertible = contentType === undefined || contentType.startsWith('text/') || contentType === 'application/xhtml+xml';
+		if (!isConvertible) {
+			return `Cannot convert ${contentType} resource to Markdown. Source: ${url}`;
+		}
+
 		html = await page.content();
 	} finally {
 		await browser.close();
@@ -20,7 +29,7 @@ export async function fetchMarkdown(url: string, env: Env): Promise<string> {
 		{ conversionOptions: { html: { hostname: new URL(url).origin } } },
 	);
 	if (result.format !== 'markdown') {
-		throw new Error(`HTML→Markdown conversion failed: ${(result as { error?: string }).error ?? 'unknown error'}`);
+		throw new Error(`Conversion failed: ${(result as { error?: string }).error ?? 'unknown error'}`);
 	}
 	return result.data;
 }
