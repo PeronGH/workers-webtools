@@ -1,5 +1,5 @@
-import { extractScreenshot, withRenderedPage } from './page';
+import { extractScreenshot, withVisualPage } from './page';
 
 export async function fetchScreenshot(url: string, env: Env): Promise<Uint8Array> {
-	return withRenderedPage(url, env, extractScreenshot);
+	return withVisualPage(url, env, extractScreenshot);
 }

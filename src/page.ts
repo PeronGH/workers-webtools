@@ -6,19 +6,51 @@ type GotoResponse = Awaited<ReturnType<Page['goto']>>;
 
 export type RenderedPage = { page: Page; response: GotoResponse };
 
-/**
- * Open a browser, navigate to `url` with lazy-load mitigations applied
- * (IntersectionObserver stub, eager <img>), then run `action` on the
- * resulting page. Closes the browser on the way out either way.
- */
-export async function withRenderedPage<T>(url: string, env: Env, action: (rendered: RenderedPage) => Promise<T>): Promise<T> {
+async function withBrowser<T>(env: Env, action: (browser: Browser) => Promise<T>): Promise<T> {
 	const browser = await launch(env.BROWSER);
 	try {
+		return await action(browser);
+	} finally {
+		await browser.close();
+	}
+}
+
+/**
+ * Minimal browser path: launch, navigate, run action. Used by Markdown
+ * extraction where we just need the rendered DOM and don't care about
+ * lazy-loaded media.
+ */
+export async function withRenderedPage<T>(url: string, env: Env, action: (rendered: RenderedPage) => Promise<T>): Promise<T> {
+	return withBrowser(env, async (browser) => {
+		const page = await browser.newPage();
+		// Track the most recent main-frame navigation response so callers see
+		// the response of the page they're actually reading, not the initial
+		// goto's response if a redirect chain occurred.
+		let response: GotoResponse = null;
+		page.on('response', (res) => {
+			if (res.request().isNavigationRequest() && res.frame() === page.mainFrame()) {
+				response = res;
+			}
+		});
+		try {
+			await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+		} catch {
+			// Best-attempt: use whatever rendered.
+		}
+		return action({ page, response });
+	});
+}
+
+/**
+ * Visual-rendering path: 1440x900 viewport + IntersectionObserver stub +
+ * native lazy <img> eager flip + extra networkidle wait. Used by
+ * screenshot/snapshot where we need lazy media to actually load.
+ */
+export async function withVisualPage<T>(url: string, env: Env, action: (rendered: RenderedPage) => Promise<T>): Promise<T> {
+	return withBrowser(env, async (browser) => {
 		const page = await browser.newPage();
 		await page.setViewportSize({ width: 1440, height: 900 });
 
-		// Treat every observed element as immediately visible so observer-driven
-		// lazy loaders trigger their fetches during initial render.
 		await page.addInitScript(() => {
 			class EagerIO {
 				private cb: (entries: unknown[]) => void;
@@ -38,8 +70,13 @@ export async function withRenderedPage<T>(url: string, env: Env, action: (render
 		});
 
 		let response: GotoResponse = null;
+		page.on('response', (res) => {
+			if (res.request().isNavigationRequest() && res.frame() === page.mainFrame()) {
+				response = res;
+			}
+		});
 		try {
-			response = await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+			await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
 		} catch {
 			// Best-attempt: use whatever rendered.
 		}
@@ -52,12 +89,10 @@ export async function withRenderedPage<T>(url: string, env: Env, action: (render
 			}
 		});
 
-		await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+		await page.waitForLoadState('networkidle', { timeout: 10000 });
 
-		return await action({ page, response });
-	} finally {
-		await browser.close();
-	}
+		return action({ page, response });
+	});
 }
 
 /**
@@ -75,7 +110,17 @@ export async function extractMarkdown({ page, response }: RenderedPage, url: str
 	if (!isConvertible) {
 		return `Cannot convert ${contentType} resource to Markdown. Source: ${url}`;
 	}
-	const html = await page.content();
+	let html: string;
+	try {
+		html = await page.content();
+	} catch (e) {
+		// Some sites trigger a navigation right between networkidle and our
+		// content read (Zhihu-style redirect chains). Wait for the new nav to
+		// commit and try once more — if it still fails, the error propagates.
+		if (!/page is navigating/i.test(String(e))) throw e;
+		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		html = await page.content();
+	}
 	const result = await env.AI.toMarkdown(
 		{ name: 'page.html', blob: new Blob([html], { type: 'text/html' }) },
 		{ conversionOptions: { html: { hostname: new URL(url).origin } } },
