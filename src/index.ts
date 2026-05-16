@@ -31,21 +31,24 @@ function extractTarget(c: { req: { url: string } }, prefix: string): string {
 
 app.get('/fetch/*', async (c) => {
 	const target = extractTarget(c, '/fetch/');
-	const markdown = await fetchMarkdown(target, c.env);
+	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
+	const markdown = await fetchMarkdown(worker, { url: target });
 	return c.body(markdown, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
 });
 
 app.post('/ask/*', async (c) => {
 	const target = extractTarget(c, '/ask/');
 	const prompt = await c.req.text();
-	const markdown = await fetchMarkdown(target, c.env);
+	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
+	const markdown = await fetchMarkdown(worker, { url: target });
 	const answer = await askAboutContent(markdown, target, prompt, c.env);
 	return c.body(answer, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
 });
 
 app.get('/screenshot/*', async (c) => {
 	const target = extractTarget(c, '/screenshot/');
-	const png = await fetchScreenshot(target, c.env);
+	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
+	const png = await fetchScreenshot(worker, { url: target });
 	return c.body(png as Uint8Array<ArrayBuffer>, 200, { 'Content-Type': 'image/png' });
 });
 
@@ -54,7 +57,7 @@ app.get('/search', async (c) => {
 	if (!query) {
 		throw new HTTPException(400, { message: 'q query param is required' });
 	}
-	const results = await search(query, c.env);
+	const results = await search(query, { env: c.env, ctx: c.executionCtx as ExecutionContext });
 	return c.json(results);
 });
 

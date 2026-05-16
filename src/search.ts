@@ -1,4 +1,4 @@
-import { withRenderedPage } from './page';
+import { withRenderedPage, type WorkerCtx } from './page';
 
 export type SearchResult = {
 	title: string;
@@ -6,7 +6,7 @@ export type SearchResult = {
 	snippet: string;
 };
 
-export async function search(query: string, env: Env): Promise<SearchResult[]> {
+export async function search(query: string, worker: WorkerCtx): Promise<SearchResult[]> {
 	const params = new URLSearchParams({
 		q: query,
 		source: 'web',
@@ -16,8 +16,8 @@ export async function search(query: string, env: Env): Promise<SearchResult[]> {
 	const url = `https://search.brave.com/search?${params}`;
 
 	return withRenderedPage(
-		url,
-		env,
+		worker,
+		{ url, waitUntil: 'domcontentloaded' },
 		({ page }) =>
 			page.$$eval('div.snippet[data-type="web"]', (items) =>
 				items.map((item) => ({
@@ -26,6 +26,5 @@ export async function search(query: string, env: Env): Promise<SearchResult[]> {
 					snippet: item.querySelector('.generic-snippet .content')?.textContent?.trim() ?? '',
 				})),
 			),
-		{ waitUntil: 'domcontentloaded' },
 	);
 }

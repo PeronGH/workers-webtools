@@ -3,31 +3,38 @@ import { launch } from '@cloudflare/playwright';
 type Browser = Awaited<ReturnType<typeof launch>>;
 type Page = Awaited<ReturnType<Browser['newPage']>>;
 type GotoResponse = Awaited<ReturnType<Page['goto']>>;
-
-export type RenderedPage = { page: Page; response: GotoResponse };
 type GotoOptions = NonNullable<Parameters<Page['goto']>[1]>;
 
-async function withBrowser<T>(env: Env, action: (browser: Browser) => Promise<T>): Promise<T> {
+export type RenderedPage = { page: Page; response: GotoResponse };
+
+/** Worker-runtime context. When `ctx` is provided, browser.close() is
+ *  detached via ctx.waitUntil so the caller returns as soon as the
+ *  action's result is ready. */
+export type WorkerCtx = { env: Env; ctx?: ExecutionContext };
+
+/** Per-call rendering options. */
+export type PageRequest = { url: string; waitUntil?: GotoOptions['waitUntil'] };
+
+async function withBrowser<T>({ env, ctx }: WorkerCtx, action: (browser: Browser) => Promise<T>): Promise<T> {
 	const browser = await launch(env.BROWSER);
 	try {
 		return await action(browser);
 	} finally {
-		await browser.close();
+		if (ctx) ctx.waitUntil(browser.close());
+		else await browser.close();
 	}
 }
 
 /**
  * Minimal browser path: launch, navigate, run action. Used by Markdown
- * extraction where we just need the rendered DOM and don't care about
- * lazy-loaded media.
+ * extraction and search scraping where we just need the rendered DOM.
  */
 export async function withRenderedPage<T>(
-	url: string,
-	env: Env,
+	worker: WorkerCtx,
+	request: PageRequest,
 	action: (rendered: RenderedPage) => Promise<T>,
-	options?: { waitUntil?: GotoOptions['waitUntil'] },
 ): Promise<T> {
-	return withBrowser(env, async (browser) => {
+	return withBrowser(worker, async (browser) => {
 		const page = await browser.newPage();
 		// Track the most recent main-frame navigation response so callers see
 		// the response of the page they're actually reading, not the initial
@@ -39,7 +46,7 @@ export async function withRenderedPage<T>(
 			}
 		});
 		try {
-			await page.goto(url, { waitUntil: options?.waitUntil ?? 'networkidle', timeout: 15000 });
+			await page.goto(request.url, { waitUntil: request.waitUntil ?? 'networkidle', timeout: 15000 });
 		} catch {
 			// Best-attempt: use whatever rendered.
 		}
@@ -52,8 +59,12 @@ export async function withRenderedPage<T>(
  * native lazy <img> eager flip + extra networkidle wait. Used by
  * screenshot/snapshot where we need lazy media to actually load.
  */
-export async function withVisualPage<T>(url: string, env: Env, action: (rendered: RenderedPage) => Promise<T>): Promise<T> {
-	return withBrowser(env, async (browser) => {
+export async function withVisualPage<T>(
+	worker: WorkerCtx,
+	request: PageRequest,
+	action: (rendered: RenderedPage) => Promise<T>,
+): Promise<T> {
+	return withBrowser(worker, async (browser) => {
 		const page = await browser.newPage();
 		await page.setViewportSize({ width: 1440, height: 900 });
 
@@ -82,7 +93,7 @@ export async function withVisualPage<T>(url: string, env: Env, action: (rendered
 			}
 		});
 		try {
-			await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+			await page.goto(request.url, { waitUntil: request.waitUntil ?? 'networkidle', timeout: 15000 });
 		} catch {
 			// Best-attempt: use whatever rendered.
 		}
@@ -120,9 +131,6 @@ export async function extractMarkdown({ page, response }: RenderedPage, url: str
 	try {
 		html = await page.content();
 	} catch (e) {
-		// Some sites trigger a navigation right between networkidle and our
-		// content read (Zhihu-style redirect chains). Wait for the new nav to
-		// commit and try once more — if it still fails, the error propagates.
 		if (!/page is navigating/i.test(String(e))) throw e;
 		await page.waitForLoadState('networkidle', { timeout: 10000 });
 		html = await page.content();

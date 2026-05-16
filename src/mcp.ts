@@ -26,7 +26,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
-				const markdown = await fetchMarkdown(url, this.env);
+				const markdown = await fetchMarkdown({ env: this.env }, { url });
 				return { content: [{ type: 'text', text: markdown }] };
 			},
 		);
@@ -41,7 +41,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
-				const png = await fetchScreenshot(url, this.env);
+				const png = await fetchScreenshot({ env: this.env }, { url });
 				const data = Buffer.from(png).toString('base64');
 				return { content: [{ type: 'image', data, mimeType: 'image/png' }] };
 			},
@@ -54,7 +54,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
-				const { markdown, png } = await fetchSnapshot(url, this.env);
+				const { markdown, png } = await fetchSnapshot({ env: this.env }, { url });
 				return {
 					content: [
 						{ type: 'text', text: markdown },
@@ -74,7 +74,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url(), prompt: z.string() },
 			},
 			async ({ url, prompt }) => {
-				const markdown = await fetchMarkdown(url, this.env);
+				const markdown = await fetchMarkdown({ env: this.env }, { url });
 				const answer = await askAboutContent(markdown, url, prompt, this.env);
 				return { content: [{ type: 'text', text: answer }] };
 			},
@@ -96,7 +96,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				},
 			},
 			async ({ query }) => {
-				const results = await search(query, this.env);
+				const results = await search(query, { env: this.env });
 				return {
 					content: [{ type: 'text', text: JSON.stringify(results, null, 2) }],
 					structuredContent: { results },

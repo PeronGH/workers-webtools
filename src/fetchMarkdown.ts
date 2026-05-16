@@ -1,5 +1,5 @@
-import { extractMarkdown, withRenderedPage } from './page';
+import { extractMarkdown, withRenderedPage, type PageRequest, type WorkerCtx } from './page';
 
-export async function fetchMarkdown(url: string, env: Env): Promise<string> {
-	return withRenderedPage(url, env, (rendered) => extractMarkdown(rendered, url, env));
+export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Promise<string> {
+	return withRenderedPage(worker, request, (rendered) => extractMarkdown(rendered, request.url, worker.env));
 }
