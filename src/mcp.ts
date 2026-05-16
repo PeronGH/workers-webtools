@@ -7,6 +7,7 @@ import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
 import { fetchSnapshot } from './fetchSnapshot';
 import { search } from './search';
+import { rewritePageRequest } from './urlRewrite';
 
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
@@ -26,7 +27,8 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
-				const markdown = await fetchMarkdown({ env: this.env }, { url });
+				const request = rewritePageRequest({ url });
+				const markdown = await fetchMarkdown({ env: this.env }, request);
 				return { content: [{ type: 'text', text: markdown }] };
 			},
 		);
@@ -74,8 +76,9 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url(), prompt: z.string() },
 			},
 			async ({ url, prompt }) => {
-				const markdown = await fetchMarkdown({ env: this.env }, { url });
-				const answer = await askAboutContent(markdown, url, prompt, this.env);
+				const request = rewritePageRequest({ url });
+				const markdown = await fetchMarkdown({ env: this.env }, request);
+				const answer = await askAboutContent(markdown, request.url, prompt, this.env);
 				return { content: [{ type: 'text', text: answer }] };
 			},
 		);
