@@ -2,7 +2,8 @@ import { launch } from '@cloudflare/playwright';
 
 export async function fetchMarkdown(url: string, env: Env): Promise<string> {
 	const browser = await launch(env.BROWSER);
-	let outcome: string | { html: string };
+	let html: string;
+	let contentType: string | undefined;
 	try {
 		const page = await browser.newPage();
 		let response: Awaited<ReturnType<typeof page.goto>> = null;
@@ -12,26 +13,26 @@ export async function fetchMarkdown(url: string, env: Env): Promise<string> {
 			// Best-attempt: use whatever rendered.
 		}
 
-		const contentType = response?.headers()['content-type']?.split(';')[0]?.trim().toLowerCase();
-		const isHtml = contentType === undefined || contentType === 'text/html' || contentType === 'application/xhtml+xml';
-		const isOtherText = !isHtml && (contentType!.startsWith('text/') || contentType === 'application/json' || contentType === 'application/xml');
-
-		if (isHtml) {
-			outcome = { html: await page.content() };
-		} else if (isOtherText) {
-			// Browser wraps JSON/plain text in a viewer; read the raw response body instead.
-			outcome = (await response?.text()) ?? '';
-		} else {
-			outcome = `Cannot convert ${contentType} resource to Markdown. Source: ${url}`;
+		contentType = response?.headers()['content-type']?.split(';')[0]?.trim().toLowerCase();
+		const isConvertible =
+			contentType === undefined ||
+			contentType.startsWith('text/') ||
+			contentType === 'application/xhtml+xml' ||
+			contentType === 'application/json' ||
+			contentType === 'application/xml';
+		if (!isConvertible) {
+			return `Cannot convert ${contentType} resource to Markdown. Source: ${url}`;
 		}
+
+		// For non-HTML text Chromium wraps the content in a <pre> viewer; that's
+		// useful — toMarkdown turns it into a fenced code block.
+		html = await page.content();
 	} finally {
 		await browser.close();
 	}
 
-	if (typeof outcome === 'string') return outcome;
-
 	const result = await env.AI.toMarkdown(
-		{ name: 'page.html', blob: new Blob([outcome.html], { type: 'text/html' }) },
+		{ name: 'page.html', blob: new Blob([html], { type: 'text/html' }) },
 		{ conversionOptions: { html: { hostname: new URL(url).origin } } },
 	);
 	if (result.format !== 'markdown') {
