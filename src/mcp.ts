@@ -11,7 +11,7 @@ import { search } from './search';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.1.2',
+		version: '0.2.0',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -21,7 +21,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			{
 				description:
 					'Fetch a webpage and return its rendered Markdown. ' +
-					'Output can be very long — prefer `ask` for specific questions; use `fetch` only when you actually need the full content.',
+					'Output can be very long due to navigation items; use `fetch` only when you actually need the full content.',
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
@@ -33,7 +33,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 		this.server.registerTool(
 			'screenshot',
 			{
-				description: 'Take a full-page PNG screenshot of a webpage.',
+				description: 'Take a full-page PNG screenshot of a webpage. Use only when you want visual identity alone; if you also care about the content, use `snapshot`.',
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
@@ -46,7 +46,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 		this.server.registerTool(
 			'snapshot',
 			{
-				description: 'Fetch a webpage as Markdown and PNG screenshot together in one browser session.',
+				description: 'Fetch a webpage as Markdown and PNG screenshot together.',
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
