@@ -7,11 +7,32 @@ const TRANSPARENT_PNG = Buffer.from(
 	'base64',
 );
 
+type DomNode = { nodeType: number };
+type DomElement = DomNode & {
+	tagName: string;
+	getAttribute(name: string): string | null;
+	setAttribute(name: string, value: string): void;
+	querySelectorAll(selector: string): Iterable<DomElement>;
+};
+type Mutation = { addedNodes: Iterable<DomNode> };
+type MutationObserverCtor = new (cb: (muts: Iterable<Mutation>) => void) => {
+	observe(target: unknown, opts: { childList: boolean; subtree: boolean }): void;
+};
+type SiteGlobal = typeof globalThis & {
+	document: {
+		querySelector(selector: string): unknown;
+		scripts: Iterable<{ textContent: string | null }>;
+	};
+	navigator: object;
+	IntersectionObserver: unknown;
+	MutationObserver: MutationObserverCtor;
+};
+
 /** Strip `navigator.webdriver`. Context init scripts run before any page script
  *  on every navigation in every frame inside the context, so this is applied
  *  consistently across multi-redirect chains. */
 function stealth(): void {
-	const nav = (globalThis as unknown as { navigator: object }).navigator;
+	const nav = (globalThis as SiteGlobal).navigator;
 	delete (Object.getPrototypeOf(nav) as Record<string, unknown>).webdriver;
 }
 
@@ -19,22 +40,7 @@ function stealth(): void {
  *  `<img loading="lazy">` to eager as nodes are inserted. The MutationObserver
  *  is per-document, so it re-arms on every navigation. */
 function eagerLazy(): void {
-	type DomNode = { nodeType: number };
-	type DomElement = DomNode & {
-		tagName: string;
-		getAttribute(name: string): string | null;
-		setAttribute(name: string, value: string): void;
-		querySelectorAll(selector: string): Iterable<DomElement>;
-	};
-	type Mutation = { addedNodes: Iterable<DomNode> };
-	type MutationObserverCtor = new (cb: (muts: Iterable<Mutation>) => void) => {
-		observe(target: unknown, opts: { childList: boolean; subtree: boolean }): void;
-	};
-	const win = globalThis as unknown as {
-		IntersectionObserver: unknown;
-		MutationObserver: MutationObserverCtor;
-		document: unknown;
-	};
+	const win = globalThis as SiteGlobal;
 
 	class EagerIO {
 		private cb: (entries: unknown[]) => void;
@@ -92,5 +98,32 @@ export async function loadPage(browser: Browser, request: PageRequest, mode: 'te
 	}
 	const page = await context.newPage();
 	await page.goto(request.url, { waitUntil: request.waitUntil ?? 'networkidle', timeout: TIMEOUT }).catch(() => {});
+	await page
+		.waitForFunction(
+			() => {
+				const markers = [
+					// Anubis (Techaro)
+					'#anubis_challenge',
+					'#anubis_version',
+					// DataDome
+					'iframe[src*="captcha-delivery.com"]',
+					'script[src*="ct.captcha-delivery.com"]',
+					// PerimeterX / HUMAN
+					'div#px-captcha',
+					// Akamai Bot Manager
+					'script[src*="_sec/cp_challenge"]',
+					// Generic meta-refresh
+					'meta[http-equiv="refresh"][content^="0"]',
+				];
+				const win = globalThis as SiteGlobal;
+				const hasSucuri = Array.from(win.document.scripts).some((script) =>
+					script.textContent?.includes('sucuri_cloudproxy_js'),
+				);
+				return !('_cf_chl_opt' in win) && !hasSucuri && !markers.some((selector) => win.document.querySelector(selector));
+			},
+			undefined,
+			{ timeout: TIMEOUT },
+		)
+		.catch(() => {});
 	return page;
 }
