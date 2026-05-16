@@ -74,14 +74,6 @@ function eagerLazy(): void {
 	}).observe(win.document, { childList: true, subtree: true });
 }
 
-async function waitForCaptcha(page: Page): Promise<void> {
-	await page.waitForSelector('#anubis_challenge', { state: 'detached', timeout: TIMEOUT });
-}
-
-function gotoWaitUntil(renderMode: PageRequest['renderMode']): GotoOptions['waitUntil'] {
-	return renderMode === 'ssr' ? 'domcontentloaded' : 'networkidle';
-}
-
 /**
  * Page loader shared by text extraction, search, and visual capture. Both modes
  * use the same viewport, stealth script, and navigation path.
@@ -105,7 +97,8 @@ export async function loadPage(browser: Browser, request: PageRequest, mode: 'te
 	}
 	const page = await context.newPage();
 	const renderMode = request.renderMode ?? 'spa';
-	await page.goto(request.url, { waitUntil: gotoWaitUntil(renderMode), timeout: TIMEOUT }).catch(() => {});
-	if (renderMode !== 'ssr') await waitForCaptcha(page);
+	await page.goto(request.url, { waitUntil: 'domcontentloaded', timeout: TIMEOUT }).catch(() => {});
+	await page.waitForSelector('#anubis_challenge', { state: 'detached', timeout: TIMEOUT });
+	if (renderMode !== 'ssr') await page.waitForLoadState('networkidle', { timeout: TIMEOUT });
 	return page;
 }
