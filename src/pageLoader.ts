@@ -75,6 +75,30 @@ function eagerLazy(): void {
 	}).observe(win.document, { childList: true, subtree: true });
 }
 
+function captchaCleared(): boolean {
+	const markers = [
+		// Anubis (Techaro)
+		'#anubis_challenge',
+		'#anubis_version',
+		// DataDome
+		'iframe[src*="captcha-delivery.com"]',
+		'script[src*="ct.captcha-delivery.com"]',
+		// PerimeterX / HUMAN
+		'div#px-captcha',
+		// Akamai Bot Manager
+		'script[src*="_sec/cp_challenge"]',
+		// Generic meta-refresh
+		'meta[http-equiv="refresh"][content^="0"]',
+	];
+	const win = globalThis as SiteGlobal;
+	const hasSucuri = Array.from(win.document.scripts).some((script) => script.textContent?.includes('sucuri_cloudproxy_js'));
+	return !('_cf_chl_opt' in win) && !hasSucuri && !markers.some((selector) => win.document.querySelector(selector));
+}
+
+async function waitForCaptcha(page: Page): Promise<void> {
+	await page.waitForFunction(captchaCleared, undefined, { timeout: TIMEOUT }).catch(() => {});
+}
+
 /**
  * Page loader shared by text extraction, search, and visual capture. Both modes
  * use the same viewport, stealth script, and navigation path.
@@ -98,32 +122,6 @@ export async function loadPage(browser: Browser, request: PageRequest, mode: 'te
 	}
 	const page = await context.newPage();
 	await page.goto(request.url, { waitUntil: request.waitUntil ?? 'networkidle', timeout: TIMEOUT }).catch(() => {});
-	await page
-		.waitForFunction(
-			() => {
-				const markers = [
-					// Anubis (Techaro)
-					'#anubis_challenge',
-					'#anubis_version',
-					// DataDome
-					'iframe[src*="captcha-delivery.com"]',
-					'script[src*="ct.captcha-delivery.com"]',
-					// PerimeterX / HUMAN
-					'div#px-captcha',
-					// Akamai Bot Manager
-					'script[src*="_sec/cp_challenge"]',
-					// Generic meta-refresh
-					'meta[http-equiv="refresh"][content^="0"]',
-				];
-				const win = globalThis as SiteGlobal;
-				const hasSucuri = Array.from(win.document.scripts).some((script) =>
-					script.textContent?.includes('sucuri_cloudproxy_js'),
-				);
-				return !('_cf_chl_opt' in win) && !hasSucuri && !markers.some((selector) => win.document.querySelector(selector));
-			},
-			undefined,
-			{ timeout: TIMEOUT },
-		)
-		.catch(() => {});
+	await waitForCaptcha(page);
 	return page;
 }
