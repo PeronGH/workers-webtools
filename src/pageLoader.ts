@@ -1,4 +1,4 @@
-import type { Browser, Page, PageRequest } from './browser';
+import { TIMEOUT, type Browser, type Page, type PageRequest } from './browser';
 
 /** 1x1 transparent PNG, fulfilled in place of blocked images so onload/onerror
  *  handlers fire normally. */
@@ -91,6 +91,6 @@ export async function loadPage(browser: Browser, request: PageRequest, mode: 'te
 		await context.addInitScript(eagerLazy);
 	}
 	const page = await context.newPage();
-	await page.goto(request.url, { waitUntil: request.waitUntil ?? 'networkidle', timeout: 15000 }).catch(() => {});
+	await page.goto(request.url, { waitUntil: request.waitUntil ?? 'networkidle', timeout: TIMEOUT }).catch(() => {});
 	return page;
 }

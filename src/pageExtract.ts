@@ -1,4 +1,4 @@
-import type { Page } from './browser';
+import { TIMEOUT, type Page } from './browser';
 
 const PAGE_IS_NAVIGATING = /page is navigating/i;
 
@@ -26,7 +26,7 @@ export async function extractMarkdown(page: Page, url: string, env: Env): Promis
 			break;
 		} catch (e) {
 			if (!PAGE_IS_NAVIGATING.test(String(e))) throw e;
-			await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+			await page.waitForLoadState('networkidle', { timeout: TIMEOUT }).catch(() => {});
 		}
 	}
 	const result = await env.AI.toMarkdown(

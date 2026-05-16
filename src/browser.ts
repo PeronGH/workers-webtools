@@ -5,6 +5,8 @@ type BrowserContext = Awaited<ReturnType<Browser['newContext']>>;
 export type Page = Awaited<ReturnType<BrowserContext['newPage']>>;
 type GotoOptions = NonNullable<Parameters<Page['goto']>[1]>;
 
+export const TIMEOUT = 10000;
+
 /** Worker-runtime context. When `ctx` is provided, browser.close() is detached
  *  via ctx.waitUntil so the caller returns as soon as the action's result is ready. */
 export type WorkerCtx = { env: Env; ctx?: ExecutionContext };
