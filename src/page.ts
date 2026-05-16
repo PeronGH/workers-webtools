@@ -1,8 +1,8 @@
 import { launch } from '@cloudflare/playwright';
 
-type Browser = Awaited<ReturnType<typeof launch>>;
+export type Browser = Awaited<ReturnType<typeof launch>>;
 type BrowserContext = Awaited<ReturnType<Browser['newContext']>>;
-type Page = Awaited<ReturnType<BrowserContext['newPage']>>;
+export type Page = Awaited<ReturnType<BrowserContext['newPage']>>;
 type GotoOptions = NonNullable<Parameters<Page['goto']>[1]>;
 
 /** Worker-runtime context. When `ctx` is provided, browser.close() is detached
@@ -81,7 +81,7 @@ function eagerLazy(): void {
 	}).observe(win.document, { childList: true, subtree: true });
 }
 
-async function withBrowser<T>({ env, ctx }: WorkerCtx, action: (browser: Browser) => Promise<T>): Promise<T> {
+export async function withBrowser<T>({ env, ctx }: WorkerCtx, action: (browser: Browser) => Promise<T>): Promise<T> {
 	const browser = await launch(env.BROWSER);
 	try {
 		return await action(browser);
@@ -92,14 +92,13 @@ async function withBrowser<T>({ env, ctx }: WorkerCtx, action: (browser: Browser
 }
 
 /**
- * Text-extraction context: stealth + a route handler that serves a 1x1 PNG for
- * image requests and aborts media/font. networkidle arrives much sooner and
- * onload-based gating on the page still fires.
+ * Page loader shared by text extraction, search, and visual capture. Both modes
+ * use the same viewport, stealth script, and navigation path.
  */
-export async function withTextContext<T>(worker: WorkerCtx, action: (context: BrowserContext) => Promise<T>): Promise<T> {
-	return withBrowser(worker, async (browser) => {
-		const context = await browser.newContext();
-		await context.addInitScript(stealth);
+export async function loadPage(browser: Browser, request: PageRequest, mode: 'text' | 'visual'): Promise<Page> {
+	const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+	await context.addInitScript(stealth);
+	if (mode === 'text') {
 		await context.route('**/*', async (route) => {
 			const type = route.request().resourceType();
 			if (type === 'image') {
@@ -110,22 +109,12 @@ export async function withTextContext<T>(worker: WorkerCtx, action: (context: Br
 				await route.continue();
 			}
 		});
-		return action(context);
-	});
-}
-
-/**
- * Visual-capture context: 1440x900 viewport + stealth + eager-lazy. The
- * MutationObserver re-arms per navigation, so lazy media starts loading
- * immediately on every redirected page too.
- */
-export async function withVisualContext<T>(worker: WorkerCtx, action: (context: BrowserContext) => Promise<T>): Promise<T> {
-	return withBrowser(worker, async (browser) => {
-		const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-		await context.addInitScript(stealth);
+	} else {
 		await context.addInitScript(eagerLazy);
-		return action(context);
-	});
+	}
+	const page = await context.newPage();
+	await page.goto(request.url, { waitUntil: request.waitUntil ?? 'networkidle', timeout: 15000 }).catch(() => {});
+	return page;
 }
 
 /**

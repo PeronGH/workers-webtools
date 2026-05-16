@@ -1,4 +1,4 @@
-import { withTextContext, type WorkerCtx } from './page';
+import { loadPage, withBrowser, type WorkerCtx } from './page';
 
 export type SearchResult = {
 	title: string;
@@ -15,9 +15,8 @@ export async function search(query: string, worker: WorkerCtx): Promise<SearchRe
 	});
 	const url = `https://search.brave.com/search?${params}`;
 
-	return withTextContext(worker, async (context) => {
-		const page = await context.newPage();
-		await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {});
+	return withBrowser(worker, async (browser) => {
+		const page = await loadPage(browser, { url, waitUntil: 'domcontentloaded' }, 'text');
 		return page.$$eval('div.snippet[data-type="web"]', (items) =>
 			items.map((item) => ({
 				title: item.querySelector('.search-snippet-title')?.textContent?.trim() ?? '',
