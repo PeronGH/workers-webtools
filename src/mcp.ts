@@ -11,7 +11,7 @@ import { search } from './search';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.2.1',
+		version: '0.2.2',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -64,7 +64,9 @@ export class WebToolsMCP extends McpAgent<Env> {
 		this.server.registerTool(
 			'ask',
 			{
-				description: 'Run `fetch` on the URL under the hood, then have an LLM respond to your prompt about its content.',
+				description:
+					'Run `fetch` on the URL under the hood, then have an LLM respond to your prompt about its content. ' +
+					'Slow due to the LLM round trip; if the page is small or your question is broad, prefer `fetch` directly.',
 				inputSchema: { url: z.url(), prompt: z.string() },
 			},
 			async ({ url, prompt }) => {
