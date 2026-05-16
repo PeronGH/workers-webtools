@@ -8,20 +8,20 @@ const PAGE_IS_NAVIGATING = /page is navigating/i;
  * redirects (HTTP, meta-refresh, JS) the page went through.
  */
 export async function extractMarkdown(page: Page, url: string, env: Env): Promise<string> {
-	const raw = await page.evaluate(() => (globalThis as unknown as { document: { contentType: string } }).document.contentType);
-	const contentType = raw?.split(';')[0]?.trim().toLowerCase();
-	const isConvertible =
-		contentType === undefined ||
-		contentType.startsWith('text/') ||
-		contentType === 'application/xhtml+xml' ||
-		contentType === 'application/json' ||
-		contentType === 'application/xml';
-	if (!isConvertible) {
-		return `Cannot convert ${contentType} resource to Markdown. Source: ${url}`;
-	}
 	let html: string;
 	for (;;) {
 		try {
+			const raw = await page.evaluate(() => (globalThis as unknown as { document: { contentType: string } }).document.contentType);
+			const contentType = raw?.split(';')[0]?.trim().toLowerCase();
+			const isConvertible =
+				contentType === undefined ||
+				contentType.startsWith('text/') ||
+				contentType === 'application/xhtml+xml' ||
+				contentType === 'application/json' ||
+				contentType === 'application/xml';
+			if (!isConvertible) {
+				return `Cannot convert ${contentType} resource to Markdown. Source: ${url}`;
+			}
 			html = await page.content();
 			break;
 		} catch (e) {
