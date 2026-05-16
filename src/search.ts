@@ -7,7 +7,12 @@ export type SearchResult = {
 };
 
 export async function search(query: string, env: Env): Promise<SearchResult[]> {
-	const params = new URLSearchParams({ q: query, source: 'web' });
+	const params = new URLSearchParams({
+		q: query,
+		source: 'web',
+		safesearch: 'off',
+		search_lang: 'en',
+	});
 	const url = `https://search.brave.com/search?${params}`;
 
 	const browser = await launch(env.BROWSER);
