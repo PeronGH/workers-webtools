@@ -18,7 +18,9 @@ export async function extractMarkdown(page: Page, url: string, env: Env): Promis
 				contentType.startsWith('text/') ||
 				contentType === 'application/xhtml+xml' ||
 				contentType === 'application/json' ||
-				contentType === 'application/xml';
+				contentType === 'application/xml' ||
+				contentType.endsWith('+json') ||
+				contentType.endsWith('+xml');
 			if (!isConvertible) {
 				return `Cannot convert ${contentType} resource to Markdown. Source: ${url}`;
 			}
