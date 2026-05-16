@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { askAboutContent } from './askAboutContent';
 import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
+import { fetchSnapshot } from './fetchSnapshot';
 import { search } from './search';
 
 export class WebToolsMCP extends McpAgent<Env> {
@@ -39,6 +40,23 @@ export class WebToolsMCP extends McpAgent<Env> {
 				const png = await fetchScreenshot(url, this.env);
 				const data = Buffer.from(png).toString('base64');
 				return { content: [{ type: 'image', data, mimeType: 'image/png' }] };
+			},
+		);
+
+		this.server.registerTool(
+			'snapshot',
+			{
+				description: 'Fetch a webpage as Markdown and PNG screenshot together in one browser session.',
+				inputSchema: { url: z.string().url() },
+			},
+			async ({ url }) => {
+				const { markdown, png } = await fetchSnapshot(url, this.env);
+				return {
+					content: [
+						{ type: 'text', text: markdown },
+						{ type: 'image', data: Buffer.from(png).toString('base64'), mimeType: 'image/png' },
+					],
+				};
 			},
 		);
 
