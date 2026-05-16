@@ -58,8 +58,8 @@ export class WebToolsMCP extends McpAgent<Env> {
 		this.server.registerTool(
 			'search',
 			{
-				description: 'Search the web.',
-				inputSchema: { query: z.string(), page: z.number().int().min(1).default(1) },
+				description: 'Search the web via Brave Search.',
+				inputSchema: { query: z.string() },
 				outputSchema: {
 					results: z.array(
 						z.object({
@@ -70,8 +70,8 @@ export class WebToolsMCP extends McpAgent<Env> {
 					),
 				},
 			},
-			async ({ query, page }) => {
-				const results = await search(query, page, this.env);
+			async ({ query }) => {
+				const results = await search(query, this.env);
 				return {
 					content: [{ type: 'text', text: JSON.stringify(results, null, 2) }],
 					structuredContent: { results },

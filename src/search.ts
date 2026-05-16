@@ -6,12 +6,8 @@ export type SearchResult = {
 	snippet: string;
 };
 
-export async function search(query: string, page: number, env: Env): Promise<SearchResult[]> {
+export async function search(query: string, env: Env): Promise<SearchResult[]> {
 	const params = new URLSearchParams({ q: query, source: 'web' });
-	if (page > 1) {
-		// Brave Search paginates by 0-based offset, ~20 results per page.
-		params.set('offset', String((page - 1) * 20));
-	}
 	const url = `https://search.brave.com/search?${params}`;
 
 	const browser = await launch(env.BROWSER);
