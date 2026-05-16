@@ -4,6 +4,7 @@ import { askAboutContent } from './askAboutContent';
 import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
 import { WebToolsMCP } from './mcp';
+import { search } from './search';
 
 export { WebToolsMCP };
 
@@ -46,6 +47,16 @@ app.get('/screenshot/*', async (c) => {
 	const target = extractTarget(c, '/screenshot/');
 	const png = await fetchScreenshot(target, c.env);
 	return c.body(png as Uint8Array<ArrayBuffer>, 200, { 'Content-Type': 'image/png' });
+});
+
+app.get('/search', async (c) => {
+	const query = c.req.query('q');
+	if (!query) {
+		throw new HTTPException(400, { message: 'q query param is required' });
+	}
+	const page = Number(c.req.query('page') ?? '1');
+	const results = await search(query, page, c.env);
+	return c.json(results);
 });
 
 export default app;

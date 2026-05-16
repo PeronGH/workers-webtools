@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { askAboutContent } from './askAboutContent';
 import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
+import { search } from './search';
 
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
@@ -51,6 +52,30 @@ export class WebToolsMCP extends McpAgent<Env> {
 				const markdown = await fetchMarkdown(url, this.env);
 				const answer = await askAboutContent(markdown, url, prompt, this.env);
 				return { content: [{ type: 'text', text: answer }] };
+			},
+		);
+
+		this.server.registerTool(
+			'search',
+			{
+				description: 'Search the web via Startpage.',
+				inputSchema: { query: z.string(), page: z.number().int().min(1).default(1) },
+				outputSchema: {
+					results: z.array(
+						z.object({
+							title: z.string(),
+							url: z.string(),
+							snippet: z.string(),
+						}),
+					),
+				},
+			},
+			async ({ query, page }) => {
+				const results = await search(query, page, this.env);
+				return {
+					content: [{ type: 'text', text: JSON.stringify(results, null, 2) }],
+					structuredContent: { results },
+				};
 			},
 		);
 	}
