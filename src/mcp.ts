@@ -22,7 +22,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				description:
 					'Fetch a webpage and return its rendered Markdown. ' +
 					'Output can be very long — prefer `ask` for specific questions; use `fetch` only when you actually need the full content.',
-				inputSchema: { url: z.string().url() },
+				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
 				const markdown = await fetchMarkdown(url, this.env);
@@ -34,7 +34,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			'screenshot',
 			{
 				description: 'Take a full-page PNG screenshot of a webpage.',
-				inputSchema: { url: z.string().url() },
+				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
 				const png = await fetchScreenshot(url, this.env);
@@ -47,7 +47,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			'snapshot',
 			{
 				description: 'Fetch a webpage as Markdown and PNG screenshot together in one browser session.',
-				inputSchema: { url: z.string().url() },
+				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
 				const { markdown, png } = await fetchSnapshot(url, this.env);
@@ -64,7 +64,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			'ask',
 			{
 				description: 'Run `fetch` on the URL under the hood, then have an LLM respond to your prompt about its content.',
-				inputSchema: { url: z.string().url(), prompt: z.string() },
+				inputSchema: { url: z.url(), prompt: z.string() },
 			},
 			async ({ url, prompt }) => {
 				const markdown = await fetchMarkdown(url, this.env);
