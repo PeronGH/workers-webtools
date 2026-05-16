@@ -1,12 +1,13 @@
 import type { PageRequest } from './browser';
 
-export const URL_REWRITE_MAP = new Map<RegExp, (url: string) => string>([
+export const URL_REWRITES: readonly (readonly [RegExp, (url: string) => string])[] = [
 	[
 		/^https?:\/\/(?:[a-z0-9-]+\.)+wikipedia\.org\/(?:wiki\/|w\/index\.php\b)/i,
 		(url) => {
 			const source = new URL(url);
-			const title =
-				source.pathname.startsWith('/wiki/') ? decodeURIComponent(source.pathname.slice('/wiki/'.length)) : source.searchParams.get('title');
+			const title = source.pathname.startsWith('/wiki/')
+				? decodeURIComponent(source.pathname.slice('/wiki/'.length))
+				: source.searchParams.get('title');
 			if (!title) return url;
 
 			const rewritten = new URL('/w/index.php', source.origin);
@@ -17,10 +18,10 @@ export const URL_REWRITE_MAP = new Map<RegExp, (url: string) => string>([
 			return rewritten.toString();
 		},
 	],
-]);
+];
 
 export function rewriteUrl(url: string): string {
-	for (const [pattern, rewrite] of URL_REWRITE_MAP) {
+	for (const [pattern, rewrite] of URL_REWRITES) {
 		if (pattern.test(url)) return rewrite(url);
 	}
 	return url;
