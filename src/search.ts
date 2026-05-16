@@ -16,7 +16,7 @@ export async function search(query: string, worker: WorkerCtx): Promise<SearchRe
 	const url = `https://search.brave.com/search?${params}`;
 
 	return withBrowser(worker, async (browser) => {
-		const page = await loadPage(browser, { url, waitUntil: 'domcontentloaded' }, 'text');
+		const page = await loadPage(browser, { url, renderMode: 'ssr' }, 'text');
 		return page.$$eval('div.snippet[data-type="web"]', (items) =>
 			items.map((item) => ({
 				title: item.querySelector('.search-snippet-title')?.textContent?.trim() ?? '',

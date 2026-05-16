@@ -1,5 +1,7 @@
 import { TIMEOUT, type Browser, type Page, type PageRequest } from './browser';
 
+type GotoOptions = NonNullable<Parameters<Page['goto']>[1]>;
+
 /** 1x1 transparent PNG, fulfilled in place of blocked images so onload/onerror
  *  handlers fire normally. */
 const TRANSPARENT_PNG = Buffer.from(
@@ -19,10 +21,7 @@ type MutationObserverCtor = new (cb: (muts: Iterable<Mutation>) => void) => {
 	observe(target: unknown, opts: { childList: boolean; subtree: boolean }): void;
 };
 type SiteGlobal = typeof globalThis & {
-	document: {
-		querySelector(selector: string): unknown;
-		scripts: Iterable<{ textContent: string | null }>;
-	};
+	document: unknown;
 	navigator: object;
 	IntersectionObserver: unknown;
 	MutationObserver: MutationObserverCtor;
@@ -75,19 +74,15 @@ function eagerLazy(): void {
 	}).observe(win.document, { childList: true, subtree: true });
 }
 
-function captchaCleared(): boolean {
-	const markers = [
-		// Anubis (Techaro)
-		'#anubis_challenge',
-		'#anubis_version',
-	];
-	const win = globalThis as SiteGlobal;
-	return !markers.some((selector) => win.document.querySelector(selector));
+async function waitForCaptcha(page: Page): Promise<void> {
+	if (await page.$('#anubis_challenge')) {
+		await page.waitForSelector('#anubis_challenge', { state: 'detached', timeout: 30000 });
+		await page.waitForLoadState('networkidle', { timeout: TIMEOUT });
+	}
 }
 
-async function waitForCaptcha(page: Page): Promise<void> {
-	await page.waitForFunction(captchaCleared, undefined, { timeout: TIMEOUT }).catch(() => {});
-	await page.waitForNavigation({ timeout: TIMEOUT });
+function gotoWaitUntil(renderMode: PageRequest['renderMode']): GotoOptions['waitUntil'] {
+	return renderMode === 'ssr' ? 'domcontentloaded' : 'networkidle';
 }
 
 /**
@@ -112,7 +107,8 @@ export async function loadPage(browser: Browser, request: PageRequest, mode: 'te
 		await context.addInitScript(eagerLazy);
 	}
 	const page = await context.newPage();
-	await page.goto(request.url, { waitUntil: request.waitUntil ?? 'networkidle', timeout: TIMEOUT }).catch(() => {});
-	await waitForCaptcha(page);
+	const renderMode = request.renderMode ?? 'spa';
+	await page.goto(request.url, { waitUntil: gotoWaitUntil(renderMode), timeout: TIMEOUT }).catch(() => {});
+	if (renderMode !== 'ssr') await waitForCaptcha(page);
 	return page;
 }
