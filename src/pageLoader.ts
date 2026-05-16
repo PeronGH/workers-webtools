@@ -80,23 +80,14 @@ function captchaCleared(): boolean {
 		// Anubis (Techaro)
 		'#anubis_challenge',
 		'#anubis_version',
-		// DataDome
-		'iframe[src*="captcha-delivery.com"]',
-		'script[src*="ct.captcha-delivery.com"]',
-		// PerimeterX / HUMAN
-		'div#px-captcha',
-		// Akamai Bot Manager
-		'script[src*="_sec/cp_challenge"]',
-		// Generic meta-refresh
-		'meta[http-equiv="refresh"][content^="0"]',
 	];
 	const win = globalThis as SiteGlobal;
-	const hasSucuri = Array.from(win.document.scripts).some((script) => script.textContent?.includes('sucuri_cloudproxy_js'));
-	return !('_cf_chl_opt' in win) && !hasSucuri && !markers.some((selector) => win.document.querySelector(selector));
+	return !markers.some((selector) => win.document.querySelector(selector));
 }
 
 async function waitForCaptcha(page: Page): Promise<void> {
 	await page.waitForFunction(captchaCleared, undefined, { timeout: TIMEOUT }).catch(() => {});
+	await page.waitForNavigation({ timeout: TIMEOUT });
 }
 
 /**
