@@ -1,4 +1,5 @@
 import { TIMEOUT, type Page } from './browser';
+import { htmlToMarkdown } from './htmlToMarkdown';
 
 const PAGE_IS_NAVIGATING = /page is navigating/i;
 
@@ -7,7 +8,7 @@ const PAGE_IS_NAVIGATING = /page is navigating/i;
  * current document so the right branch is picked regardless of how many
  * redirects (HTTP, meta-refresh, JS) the page went through.
  */
-export async function extractMarkdown(page: Page, url: string, env: Env): Promise<string> {
+export async function extractMarkdown(page: Page, url: string): Promise<string> {
 	let html: string;
 	for (;;) {
 		try {
@@ -29,14 +30,7 @@ export async function extractMarkdown(page: Page, url: string, env: Env): Promis
 			await page.waitForLoadState('networkidle', { timeout: TIMEOUT }).catch(() => {});
 		}
 	}
-	const result = await env.AI.toMarkdown(
-		{ name: 'page.html', blob: new Blob([html], { type: 'text/html' }) },
-		{ conversionOptions: { html: { hostname: new URL(url).origin } } },
-	);
-	if (result.format !== 'markdown') {
-		throw new Error(`Conversion failed: ${(result as { error?: string }).error ?? 'unknown error'}`);
-	}
-	return result.data;
+	return htmlToMarkdown(html, url);
 }
 
 /** Full-page PNG of a settled page. */
