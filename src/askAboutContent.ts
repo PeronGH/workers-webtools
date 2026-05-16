@@ -15,6 +15,7 @@ export async function askAboutContent(content: string, url: string, prompt: stri
 			},
 			{ role: 'user', content: prompt },
 		],
+		temperature: 0.2,
 		// K2.6 renamed `enable_thinking` to `thinking`; workerd's AI catalog still has the old name.
 		chat_template_kwargs: { thinking: false },
 	});
