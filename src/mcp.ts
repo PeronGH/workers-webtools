@@ -73,7 +73,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			async ({ query }) => {
 				const results = await search(query, this.env);
 				return {
-					content: [{ type: 'text', text: JSON.stringify(results) }],
+					content: [{ type: 'text', text: JSON.stringify(results, null, 2) }],
 					structuredContent: { results },
 				};
 			},
