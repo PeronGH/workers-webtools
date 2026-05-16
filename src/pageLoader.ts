@@ -98,7 +98,7 @@ export async function loadPage(browser: Browser, request: PageRequest, mode: 'te
 	const page = await context.newPage();
 	const renderMode = request.renderMode ?? 'spa';
 	await page.goto(request.url, { waitUntil: 'domcontentloaded', timeout: TIMEOUT }).catch(() => {});
-	await page.waitForSelector('#anubis_challenge', { state: 'detached', timeout: TIMEOUT });
-	if (renderMode !== 'ssr') await page.waitForLoadState('networkidle', { timeout: TIMEOUT });
+	await page.waitForSelector('#anubis_challenge', { state: 'detached', timeout: TIMEOUT }).catch(() => {});
+	if (renderMode !== 'ssr') await page.waitForLoadState('networkidle', { timeout: TIMEOUT }).catch(() => {});
 	return page;
 }
