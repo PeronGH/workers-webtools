@@ -1,5 +1,7 @@
 import type { Page } from './browser';
 
+const PAGE_IS_NAVIGATING = /page is navigating/i;
+
 /**
  * Pull Markdown from a settled page. Reads `document.contentType` from the
  * current document so the right branch is picked regardless of how many
@@ -18,12 +20,14 @@ export async function extractMarkdown(page: Page, url: string, env: Env): Promis
 		return `Cannot convert ${contentType} resource to Markdown. Source: ${url}`;
 	}
 	let html: string;
-	try {
-		html = await page.content();
-	} catch (e) {
-		if (!/page is navigating/i.test(String(e))) throw e;
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
-		html = await page.content();
+	for (;;) {
+		try {
+			html = await page.content();
+			break;
+		} catch (e) {
+			if (!PAGE_IS_NAVIGATING.test(String(e))) throw e;
+			await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+		}
 	}
 	const result = await env.AI.toMarkdown(
 		{ name: 'page.html', blob: new Blob([html], { type: 'text/html' }) },
