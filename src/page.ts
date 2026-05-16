@@ -36,6 +36,7 @@ export async function withRenderedPage<T>(
 ): Promise<T> {
 	return withBrowser(worker, async (browser) => {
 		const page = await browser.newPage();
+		await hideWebdriverFlag(page);
 		// Track the most recent main-frame navigation response so callers see
 		// the response of the page they're actually reading, not the initial
 		// goto's response if a redirect chain occurred.
@@ -54,6 +55,14 @@ export async function withRenderedPage<T>(
 	});
 }
 
+/** Strip `navigator.webdriver` so the page doesn't trivially detect automation. */
+async function hideWebdriverFlag(page: Page): Promise<void> {
+	await page.addInitScript(() => {
+		const nav = (globalThis as unknown as { navigator: object }).navigator;
+		delete (Object.getPrototypeOf(nav) as Record<string, unknown>).webdriver;
+	});
+}
+
 /**
  * Visual-rendering path: 1440x900 viewport + IntersectionObserver stub +
  * native lazy <img> eager flip + extra networkidle wait. Used by
@@ -66,6 +75,7 @@ export async function withVisualPage<T>(
 ): Promise<T> {
 	return withBrowser(worker, async (browser) => {
 		const page = await browser.newPage();
+		await hideWebdriverFlag(page);
 		await page.setViewportSize({ width: 1440, height: 900 });
 
 		await page.addInitScript(() => {
