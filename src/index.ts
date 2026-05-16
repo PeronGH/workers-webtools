@@ -5,6 +5,7 @@ import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
 import { WebToolsMCP } from './mcp';
 import { search } from './search';
+import { rewritePageRequest } from './urlRewrite';
 
 export { WebToolsMCP };
 
@@ -31,24 +32,27 @@ function extractTarget(c: { req: { url: string } }, prefix: string): string {
 
 app.get('/fetch/*', async (c) => {
 	const target = extractTarget(c, '/fetch/');
+	const request = rewritePageRequest({ url: target });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
-	const markdown = await fetchMarkdown(worker, { url: target });
+	const markdown = await fetchMarkdown(worker, request);
 	return c.body(markdown, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
 });
 
 app.post('/ask/*', async (c) => {
 	const target = extractTarget(c, '/ask/');
 	const prompt = await c.req.text();
+	const request = rewritePageRequest({ url: target });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
-	const markdown = await fetchMarkdown(worker, { url: target });
-	const answer = await askAboutContent(markdown, target, prompt, c.env);
+	const markdown = await fetchMarkdown(worker, request);
+	const answer = await askAboutContent(markdown, request.url, prompt, c.env);
 	return c.body(answer, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
 });
 
 app.get('/screenshot/*', async (c) => {
 	const target = extractTarget(c, '/screenshot/');
+	const request = rewritePageRequest({ url: target });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
-	const png = await fetchScreenshot(worker, { url: target });
+	const png = await fetchScreenshot(worker, request);
 	return c.body(png as Uint8Array<ArrayBuffer>, 200, { 'Content-Type': 'image/png' });
 });
 
