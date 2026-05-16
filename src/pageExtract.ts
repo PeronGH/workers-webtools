@@ -1,6 +1,17 @@
+import { Readability } from '@mozilla/readability';
+import JSDOMParser from '@mozilla/readability/JSDOMParser';
 import { TIMEOUT, type Page } from './browser';
 
 const PAGE_IS_NAVIGATING = /page is navigating/i;
+
+function readableHtml(html: string, url: string): string {
+	try {
+		const doc = new JSDOMParser().parse(html, url) as ConstructorParameters<typeof Readability>[0];
+		return new Readability(doc).parse()?.content ?? html;
+	} catch {
+		return html;
+	}
+}
 
 /**
  * Pull Markdown from a settled page. Reads `document.contentType` from the
@@ -30,7 +41,7 @@ export async function extractMarkdown(page: Page, url: string, env: Env): Promis
 		}
 	}
 	const result = await env.AI.toMarkdown(
-		{ name: 'page.html', blob: new Blob([html], { type: 'text/html' }) },
+		{ name: 'page.html', blob: new Blob([readableHtml(html, url)], { type: 'text/html' }) },
 		{ conversionOptions: { html: { hostname: new URL(url).origin } } },
 	);
 	if (result.format !== 'markdown') {
