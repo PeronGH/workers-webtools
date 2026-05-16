@@ -11,7 +11,7 @@ import { search } from './search';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.2.0',
+		version: '0.2.1',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -21,7 +21,8 @@ export class WebToolsMCP extends McpAgent<Env> {
 			{
 				description:
 					'Fetch a webpage and return its rendered Markdown. ' +
-					'Output can be very long due to navigation items; use `fetch` only when you actually need the full content.',
+					'Output can be very long due to navigation items; use `fetch` only when you actually need the full content. ' +
+					'Cannot handle PDFs or other binary content.',
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
