@@ -45,7 +45,7 @@ app.post('/ask/*', async (c) => {
 app.get('/screenshot/*', async (c) => {
 	const target = extractTarget(c, '/screenshot/');
 	const png = await fetchScreenshot(target, c.env);
-	return c.body(png, 200, { 'Content-Type': 'image/png' });
+	return c.body(png as Uint8Array<ArrayBuffer>, 200, { 'Content-Type': 'image/png' });
 });
 
 export default app;
