@@ -75,10 +75,7 @@ function eagerLazy(): void {
 }
 
 async function waitForCaptcha(page: Page): Promise<void> {
-	if (await page.$('#anubis_challenge')) {
-		await page.waitForSelector('#anubis_challenge', { state: 'detached', timeout: TIMEOUT });
-		await page.waitForLoadState('networkidle', { timeout: TIMEOUT });
-	}
+	await page.waitForSelector('#anubis_challenge', { state: 'detached', timeout: TIMEOUT });
 }
 
 function gotoWaitUntil(renderMode: PageRequest['renderMode']): GotoOptions['waitUntil'] {
