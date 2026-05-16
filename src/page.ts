@@ -5,6 +5,7 @@ type Page = Awaited<ReturnType<Browser['newPage']>>;
 type GotoResponse = Awaited<ReturnType<Page['goto']>>;
 
 export type RenderedPage = { page: Page; response: GotoResponse };
+type GotoOptions = NonNullable<Parameters<Page['goto']>[1]>;
 
 async function withBrowser<T>(env: Env, action: (browser: Browser) => Promise<T>): Promise<T> {
 	const browser = await launch(env.BROWSER);
@@ -20,7 +21,12 @@ async function withBrowser<T>(env: Env, action: (browser: Browser) => Promise<T>
  * extraction where we just need the rendered DOM and don't care about
  * lazy-loaded media.
  */
-export async function withRenderedPage<T>(url: string, env: Env, action: (rendered: RenderedPage) => Promise<T>): Promise<T> {
+export async function withRenderedPage<T>(
+	url: string,
+	env: Env,
+	action: (rendered: RenderedPage) => Promise<T>,
+	options?: { waitUntil?: GotoOptions['waitUntil'] },
+): Promise<T> {
 	return withBrowser(env, async (browser) => {
 		const page = await browser.newPage();
 		// Track the most recent main-frame navigation response so callers see
@@ -33,7 +39,7 @@ export async function withRenderedPage<T>(url: string, env: Env, action: (render
 			}
 		});
 		try {
-			await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+			await page.goto(url, { waitUntil: options?.waitUntil ?? 'networkidle', timeout: 15000 });
 		} catch {
 			// Best-attempt: use whatever rendered.
 		}
