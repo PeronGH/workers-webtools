@@ -7,7 +7,11 @@ import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
 
 export class WebToolsMCP extends McpAgent<Env> {
-	server = new McpServer({ name: 'webtools', version: '0.1.0' });
+	server = new McpServer({
+		name: 'webtools',
+		version: '0.1.1',
+		description: 'Web tools backed by a headless Chromium browser',
+	});
 
 	async init() {
 		this.server.registerTool(
@@ -40,7 +44,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 		this.server.registerTool(
 			'ask',
 			{
-				description: "Ask a question about a webpage's content.",
+				description: 'Have an LLM read a webpage and respond to your prompt about its content.',
 				inputSchema: { url: z.string().url(), prompt: z.string() },
 			},
 			async ({ url, prompt }) => {
