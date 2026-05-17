@@ -1,3 +1,5 @@
+import { Defuddle } from 'defuddle/node';
+import { parseHTML } from 'linkedom';
 import { TIMEOUT, type Page } from './browser';
 
 const PAGE_IS_NAVIGATING = /page is navigating/i;
@@ -6,6 +8,11 @@ const PAGE_IS_NAVIGATING = /page is navigating/i;
  * Pull Markdown from a settled page. Reads `document.contentType` from the
  * current document so the right branch is picked regardless of how many
  * redirects (HTTP, meta-refresh, JS) the page went through.
+ *
+ * Defuddle does the content extraction (boilerplate removal, footnote
+ * normalization). The HTML → Markdown step is handed off to env.AI.toMarkdown
+ * because Defuddle's bundled turndown converter pulls in DOMParser, which
+ * isn't available in the Workers runtime.
  */
 export async function extractMarkdown(page: Page, url: string, env: Env): Promise<string> {
 	let html: string;
@@ -31,14 +38,33 @@ export async function extractMarkdown(page: Page, url: string, env: Env): Promis
 			await page.waitForLoadState('networkidle', { timeout: TIMEOUT }).catch(() => {});
 		}
 	}
+	const { document } = parseHTML(html);
+	const extracted = await Defuddle(document, url);
 	const result = await env.AI.toMarkdown(
-		{ name: 'page.html', blob: new Blob([html], { type: 'text/html' }) },
+		{ name: 'page.html', blob: new Blob([extracted.content], { type: 'text/html' }) },
 		{ conversionOptions: { html: { hostname: new URL(url).origin } } },
 	);
 	if (result.format !== 'markdown') {
 		throw new Error(`Conversion failed: ${(result as { error?: string }).error ?? 'unknown error'}`);
 	}
-	return result.data;
+	const frontMatter = buildFrontMatter({
+		title: extracted.title,
+		description: extracted.description,
+		author: extracted.author,
+		site: extracted.site,
+		published: extracted.published,
+		image: extracted.image,
+		language: extracted.language,
+		url,
+	});
+	return frontMatter + result.data;
+}
+
+function buildFrontMatter(fields: Record<string, string>): string {
+	const entries = Object.entries(fields).filter(([, v]) => v && v.trim().length > 0);
+	if (entries.length === 0) return '';
+	const lines = entries.map(([k, v]) => `${k}: ${JSON.stringify(v)}`);
+	return `---\n${lines.join('\n')}\n---\n\n`;
 }
 
 /** Full-page PNG of a settled page. */
