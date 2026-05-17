@@ -41,7 +41,7 @@ export async function extractMarkdown(page: Page, env: Env): Promise<string> {
 		}
 	}
 	const { document } = parseHTML(html);
-	const extracted = await Defuddle(document, url);
+	const extracted = await Defuddle(document, url, { includeReplies: true });
 	const result = await env.AI.toMarkdown(
 		{ name: 'page.html', blob: new Blob([extracted.content], { type: 'text/html' }) },
 		{ conversionOptions: { html: { hostname: new URL(url).origin } } },
