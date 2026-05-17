@@ -12,7 +12,7 @@ import { rewritePageRequest } from './urlRewrite';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.2.4',
+		version: '0.2.5',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -22,7 +22,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			{
 				description:
 					'Fetch a webpage using headless browser and return its rendered Markdown. ' +
-					'Output includes navigation, sidebars, and footer chrome alongside the main content, so it can be long. ' +
+					'Output can be very long. ' +
 					'Cannot handle PDFs or other binary content.',
 				inputSchema: { url: z.url() },
 			},
