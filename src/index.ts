@@ -1,13 +1,14 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { askAboutContent } from './askAboutContent';
+import { SteelBrowser } from './browser';
 import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
 import { WebToolsMCP } from './mcp';
 import { search } from './search';
 import { rewritePageRequest } from './urlRewrite';
 
-export { WebToolsMCP };
+export { SteelBrowser, WebToolsMCP };
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -33,7 +34,7 @@ function extractTarget(c: { req: { url: string } }, prefix: string): string {
 app.get('/fetch/*', async (c) => {
 	const target = extractTarget(c, '/fetch/');
 	const request = rewritePageRequest({ url: target });
-	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
+	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
 	const markdown = await fetchMarkdown(worker, request);
 	return c.body(markdown, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
 });
@@ -42,7 +43,7 @@ app.post('/ask/*', async (c) => {
 	const target = extractTarget(c, '/ask/');
 	const prompt = await c.req.text();
 	const request = rewritePageRequest({ url: target });
-	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
+	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
 	const markdown = await fetchMarkdown(worker, request);
 	const answer = await askAboutContent(markdown, request.url, prompt, c.env);
 	return c.body(answer, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
@@ -51,7 +52,7 @@ app.post('/ask/*', async (c) => {
 app.get('/screenshot/*', async (c) => {
 	const target = extractTarget(c, '/screenshot/');
 	const request = rewritePageRequest({ url: target });
-	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
+	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
 	const png = await fetchScreenshot(worker, request);
 	return c.body(png as Uint8Array<ArrayBuffer>, 200, { 'Content-Type': 'image/png' });
 });
@@ -61,7 +62,7 @@ app.get('/search', async (c) => {
 	if (!query) {
 		throw new HTTPException(400, { message: 'q query param is required' });
 	}
-	const results = await search(query, { env: c.env, ctx: c.executionCtx as ExecutionContext });
+	const results = await search(query, { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') });
 	return c.json(results);
 });
 

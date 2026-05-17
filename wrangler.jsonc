@@ -13,11 +13,24 @@
 	"upload_source_maps": true,
 	"compatibility_flags": ["nodejs_compat"],
 	"ai": { "binding": "AI" },
-	"browser": { "binding": "BROWSER" },
+	"containers": [
+		{
+			"class_name": "SteelBrowser",
+			"image": "./Dockerfile",
+			"instance_type": "standard-2",
+			"max_instances": 100,
+		},
+	],
 	"durable_objects": {
-		"bindings": [{ "class_name": "WebToolsMCP", "name": "MCP_OBJECT" }],
+		"bindings": [
+			{ "class_name": "WebToolsMCP", "name": "MCP_OBJECT" },
+			{ "class_name": "SteelBrowser", "name": "STEEL" },
+		],
 	},
-	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["WebToolsMCP"] }],
+	"migrations": [
+		{ "tag": "v1", "new_sqlite_classes": ["WebToolsMCP"] },
+		{ "tag": "v2", "new_sqlite_classes": ["SteelBrowser"] },
+	],
 	// Secrets (set via `wrangler secret put` or `.dev.vars` locally):
 	// - API_KEY: shared key required by the worker (Authorization: Bearer or ?key=)
 	/**
