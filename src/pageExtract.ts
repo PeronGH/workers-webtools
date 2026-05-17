@@ -14,12 +14,14 @@ const PAGE_IS_NAVIGATING = /page is navigating/i;
  * because Defuddle's bundled turndown converter pulls in DOMParser, which
  * isn't available in the Workers runtime.
  */
-export async function extractMarkdown(page: Page, url: string, env: Env): Promise<string> {
+export async function extractMarkdown(page: Page, env: Env): Promise<string> {
 	let html: string;
+	let url: string;
 	for (;;) {
 		try {
 			const raw = await page.evaluate(() => (globalThis as unknown as { document: { contentType: string } }).document.contentType);
 			const contentType = raw?.split(';')[0]?.trim().toLowerCase();
+			url = page.url();
 			const isConvertible =
 				contentType === undefined ||
 				contentType.startsWith('text/') ||
@@ -54,7 +56,6 @@ export async function extractMarkdown(page: Page, url: string, env: Env): Promis
 		site: extracted.site,
 		published: extracted.published,
 		image: extracted.image,
-		language: extracted.language,
 		url,
 	});
 	return frontMatter + result.data;

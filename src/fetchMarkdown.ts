@@ -3,6 +3,6 @@ import { extractMarkdown, loadPage, withBrowser, type PageRequest, type WorkerCt
 export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Promise<string> {
 	return withBrowser(worker, async (browser) => {
 		const page = await loadPage(browser, request, 'text');
-		return extractMarkdown(page, request.url, worker.env);
+		return extractMarkdown(page, worker.env);
 	});
 }
