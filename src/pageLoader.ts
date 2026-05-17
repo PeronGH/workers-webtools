@@ -22,18 +22,9 @@ type MutationObserverCtor = new (cb: (muts: Iterable<Mutation>) => void) => {
 };
 type SiteGlobal = typeof globalThis & {
 	document: unknown;
-	navigator: object;
 	IntersectionObserver: unknown;
 	MutationObserver: MutationObserverCtor;
 };
-
-/** Strip `navigator.webdriver`. Context init scripts run before any page script
- *  on every navigation in every frame inside the context, so this is applied
- *  consistently across multi-redirect chains. */
-function stealth(): void {
-	const nav = (globalThis as SiteGlobal).navigator;
-	delete (Object.getPrototypeOf(nav) as Record<string, unknown>).webdriver;
-}
 
 /** Make lazy-loaded media load eagerly: stub IntersectionObserver and rewrite
  *  `<img loading="lazy">` to eager as nodes are inserted. The MutationObserver
@@ -75,12 +66,12 @@ function eagerLazy(): void {
 }
 
 /**
- * Page loader shared by text extraction, search, and visual capture. Both modes
- * use the same viewport, stealth script, and navigation path.
+ * Page loader shared by text extraction, search, and visual capture. Steel handles
+ * webdriver/fingerprint stealth server-side, so both modes share viewport + navigation
+ * and diverge only on resource policy.
  */
 export async function loadPage(browser: Browser, request: PageRequest, mode: 'text' | 'visual'): Promise<Page> {
 	const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-	await context.addInitScript(stealth);
 	if (mode === 'text') {
 		await context.route('**/*', async (route) => {
 			const type = route.request().resourceType();
