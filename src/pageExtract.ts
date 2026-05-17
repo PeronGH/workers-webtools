@@ -4,10 +4,12 @@ import { TIMEOUT, type Page } from './browser';
 
 const PAGE_IS_NAVIGATING = /page is navigating/i;
 
-const DEFUDDLE_MATCHERS: Array<(url: URL) => boolean> = [() => true];
+const REDDIT_LISTING = /^\/(r|u|user)\/[^/]+(\/[^/]+)?\/?$/;
 
+/** Defuddle's Reddit extractor only returns the first post on listing pages. */
 function shouldDefuddle(url: URL): boolean {
-	return DEFUDDLE_MATCHERS.some((match) => match(url));
+	if (/(^|\.)reddit\.com$/.test(url.hostname) && REDDIT_LISTING.test(url.pathname)) return false;
+	return true;
 }
 
 /**
