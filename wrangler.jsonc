@@ -15,8 +15,8 @@
 	"ai": { "binding": "AI" },
 	"containers": [
 		{
-			"class_name": "SteelBrowser",
-			"image": "./Dockerfile",
+			"class_name": "RayoBrowser",
+			"image": "docker.io/rayobyte/rayobrowse:0.2.1",
 			"instance_type": "standard-2",
 			"max_instances": 100,
 		},
@@ -24,12 +24,11 @@
 	"durable_objects": {
 		"bindings": [
 			{ "class_name": "WebToolsMCP", "name": "MCP_OBJECT" },
-			{ "class_name": "SteelBrowser", "name": "STEEL" },
+			{ "class_name": "RayoBrowser", "name": "RAYO" },
 		],
 	},
 	"migrations": [
-		{ "tag": "v1", "new_sqlite_classes": ["WebToolsMCP"] },
-		{ "tag": "v2", "new_sqlite_classes": ["SteelBrowser"] },
+		{ "tag": "v1", "new_sqlite_classes": ["WebToolsMCP", "RayoBrowser"] },
 	],
 	// Secrets (set via `wrangler secret put` or `.dev.vars` locally):
 	// - API_KEY: shared key required by the worker (Authorization: Bearer or ?key=)

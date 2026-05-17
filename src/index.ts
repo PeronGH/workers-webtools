@@ -1,14 +1,14 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { askAboutContent } from './askAboutContent';
-import { SteelBrowser } from './browser';
+import { RayoBrowser } from './browser';
 import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
 import { WebToolsMCP } from './mcp';
 import { search } from './search';
 import { rewritePageRequest } from './urlRewrite';
 
-export { SteelBrowser, WebToolsMCP };
+export { RayoBrowser, WebToolsMCP };
 
 const app = new Hono<{ Bindings: Env }>();
 
