@@ -22,7 +22,7 @@ from cloakbrowser import launch_async
 
 PORT = 8000
 NAV_TIMEOUT_MS = 10_000
-VIEWPORT = {"width": 1440, "height": 787}
+VIEWPORT = {"width": 1440, "height": 767}
 
 TRANSPARENT_PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGNgAAAAAgABc3UBGAAAAABJRU5ErkJggg=="
