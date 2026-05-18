@@ -78,14 +78,6 @@ async def _wait_generic(page) -> None:
         "#anubis_challenge", state="detached", timeout=NAV_TIMEOUT_MS
     )
     await page.wait_for_load_state("networkidle", timeout=NAV_TIMEOUT_MS)
-    if await page.query_selector(".cf-turnstile"):
-        frame = page.frame_locator('iframe[src*="challenges.cloudflare.com"]')
-        await frame.locator('input[type="checkbox"]').click(timeout=NAV_TIMEOUT_MS)
-        await page.wait_for_function(
-            "document.querySelector('input[name=\"cf-turnstile-response\"]')?.value",
-            timeout=NAV_TIMEOUT_MS,
-        )
-        await page.wait_for_load_state("networkidle", timeout=NAV_TIMEOUT_MS)
 
 
 async def _wait_brave(page) -> None:
