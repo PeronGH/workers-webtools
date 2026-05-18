@@ -22,7 +22,7 @@ from cloakbrowser import launch_async
 
 PORT = 8000
 NAV_TIMEOUT_MS = 10_000
-VIEWPORT = {"width": 1440, "height": 900}
+VIEWPORT = {"width": 1440, "height": 787}
 
 TRANSPARENT_PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGNgAAAAAgABc3UBGAAAAABJRU5ErkJggg=="
@@ -170,7 +170,7 @@ async def exit_on_dead_browser(request: web.Request, handler):
 
 async def on_startup(app: web.Application) -> None:
     log.info("launching CloakBrowser...")
-    app["browser"] = await launch_async(headless=False)
+    app["browser"] = await launch_async(headless=False, humanize=True)
     log.info("CloakBrowser ready")
 
 
