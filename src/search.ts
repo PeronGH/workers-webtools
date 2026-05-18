@@ -22,6 +22,7 @@ export async function search(query: string, worker: WorkerCtx): Promise<SearchRe
 		source: 'web',
 		safesearch: 'off',
 		search_lang: 'en',
+		country: 'ALL',
 	});
 	const url = `https://search.brave.com/search?${params}`;
 
