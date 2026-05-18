@@ -12,8 +12,10 @@ crashed browser is handled by the Worker calling Container.destroy().
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import logging
+import os
 
 from aiohttp import web
 from cloakbrowser import launch_async
@@ -152,6 +154,20 @@ async def handle_health(_: web.Request) -> web.Response:
     return web.json_response({"ok": True})
 
 
+@web.middleware
+async def exit_on_dead_browser(request: web.Request, handler):
+    """If the shared browser is gone, schedule a hard process exit so
+    Cloudflare Containers rehydrates on the next request. Without this the
+    server would keep returning 500s forever after a browser crash."""
+    try:
+        return await handler(request)
+    finally:
+        browser = request.app.get("browser")
+        if browser is not None and not browser.is_connected():
+            log.error("browser disconnected; exiting for container restart")
+            asyncio.get_running_loop().call_later(0.5, lambda: os._exit(1))
+
+
 async def on_startup(app: web.Application) -> None:
     log.info("launching CloakBrowser...")
     app["browser"] = await launch_async(headless=True)
@@ -168,7 +184,7 @@ async def on_cleanup(app: web.Application) -> None:
 
 
 def main() -> None:
-    app = web.Application(client_max_size=1024 * 1024 * 16)
+    app = web.Application(client_max_size=1024 * 1024 * 16, middlewares=[exit_on_dead_browser])
     app.router.add_get("/", handle_health)
     app.router.add_post("/fetch", handle_fetch)
     app.router.add_post("/snapshot", handle_snapshot)
