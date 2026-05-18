@@ -1,8 +1,5 @@
 import { Defuddle } from 'defuddle/node';
 import { parseHTML } from 'linkedom';
-import { TIMEOUT, type Page } from './browser';
-
-const PAGE_IS_NAVIGATING = /page is navigating/i;
 
 const REDDIT_LISTING = /^\/(r|u|user)\/[^/]+(\/[^/]+)?\/?$/;
 
@@ -13,47 +10,36 @@ function shouldDefuddle(url: URL): boolean {
 }
 
 /**
- * Pull Markdown from a settled page. Reads `document.contentType` from the
- * current document so the right branch is picked regardless of how many
- * redirects (HTTP, meta-refresh, JS) the page went through.
- *
- * Defuddle does the content extraction (boilerplate removal, footnote
- * normalization). The HTML → Markdown step is handed off to env.AI.toMarkdown
- * because Defuddle's bundled turndown converter pulls in DOMParser, which
- * isn't available in the Workers runtime.
+ * Convert a settled page (HTML + final URL + originating Content-Type) into
+ * Markdown. Defuddle removes boilerplate; env.AI.toMarkdown does the
+ * HTML → Markdown step because Defuddle's bundled turndown converter needs
+ * DOMParser, which isn't in the Workers runtime.
  */
-export async function extractMarkdown(page: Page, env: Env): Promise<string> {
-	let html: string;
-	let url: string;
-	for (;;) {
-		try {
-			const raw = await page.evaluate<string>('document.contentType');
-			const contentType = raw?.split(';')[0]?.trim().toLowerCase();
-			url = page.url();
-			const isConvertible =
-				contentType === undefined ||
-				contentType.startsWith('text/') ||
-				contentType === 'application/xhtml+xml' ||
-				contentType === 'application/json' ||
-				contentType === 'application/xml' ||
-				contentType.endsWith('+json') ||
-				contentType.endsWith('+xml');
-			if (!isConvertible) {
-				return `Cannot convert ${contentType} resource to Markdown. Source: ${url}`;
-			}
-			html = await page.content();
-			break;
-		} catch (e) {
-			if (!PAGE_IS_NAVIGATING.test(String(e))) throw e;
-			await page.waitForLoadState('networkidle', { timeout: TIMEOUT }).catch(() => {});
-		}
+export async function extractMarkdown(
+	html: string,
+	finalUrl: string,
+	contentType: string | undefined,
+	env: Env,
+): Promise<string> {
+	const ct = contentType?.split(';')[0]?.trim().toLowerCase();
+	const isConvertible =
+		ct === undefined ||
+		ct === '' ||
+		ct.startsWith('text/') ||
+		ct === 'application/xhtml+xml' ||
+		ct === 'application/json' ||
+		ct === 'application/xml' ||
+		ct.endsWith('+json') ||
+		ct.endsWith('+xml');
+	if (!isConvertible) {
+		return `Cannot convert ${contentType} resource to Markdown. Source: ${finalUrl}`;
 	}
-	const pageUrl = new URL(url);
+	const pageUrl = new URL(finalUrl);
 	let contentHtml = html;
-	const meta: Record<string, string | undefined> = { url };
+	const meta: Record<string, string | undefined> = { url: finalUrl };
 	if (shouldDefuddle(pageUrl)) {
 		const { document } = parseHTML(html);
-		const extracted = await Defuddle(document, url, { includeReplies: true });
+		const extracted = await Defuddle(document, finalUrl, { includeReplies: true });
 		contentHtml = extracted.content;
 		meta.title = extracted.title;
 		meta.description = extracted.description;
@@ -77,9 +63,4 @@ function buildFrontMatter(fields: Record<string, string | undefined>): string {
 	if (entries.length === 0) return '';
 	const lines = entries.map(([k, v]) => `${k}: ${JSON.stringify(v)}`);
 	return `---\n${lines.join('\n')}\n---\n\n`;
-}
-
-/** Full-page PNG of a settled page. */
-export async function extractScreenshot(page: Page): Promise<Uint8Array> {
-	return page.screenshot({ fullPage: true, type: 'png' });
 }

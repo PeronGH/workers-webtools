@@ -1,9 +1,19 @@
-import { loadPage, withBrowser, type WorkerCtx } from './page';
+import { parseHTML } from 'linkedom';
+import { fetchHtml, type WorkerCtx } from './page';
 
 export type SearchResult = {
 	title: string;
 	url: string;
 	snippet: string;
+};
+
+// linkedom's NodeList iterates as `unknown`. We describe just the surface we
+// touch and cast each item once with a single `as` from unknown.
+type SearchEl = {
+	querySelector(selector: string): {
+		textContent: string | null;
+		getAttribute(name: string): string | null;
+	} | null;
 };
 
 export async function search(query: string, worker: WorkerCtx): Promise<SearchResult[]> {
@@ -15,14 +25,14 @@ export async function search(query: string, worker: WorkerCtx): Promise<SearchRe
 	});
 	const url = `https://search.brave.com/search?${params}`;
 
-	return withBrowser(worker, async (browser) => {
-		const page = await loadPage(browser, { url, renderMode: 'ssr' }, 'text');
-		return page.$$eval('div.snippet[data-type="web"]', (items) =>
-			items.map((item) => ({
-				title: item.querySelector('.search-snippet-title')?.textContent?.trim() ?? '',
-				url: item.querySelector('a.l1')?.getAttribute('href') ?? '',
-				snippet: item.querySelector('.generic-snippet .content')?.textContent?.trim() ?? '',
-			})),
-		);
+	const { html } = await fetchHtml(worker, { url, renderMode: 'ssr' });
+	const { document } = parseHTML(html);
+	return Array.from(document.querySelectorAll('div.snippet[data-type="web"]'), (raw) => {
+		const item = raw as SearchEl;
+		return {
+			title: item.querySelector('.search-snippet-title')?.textContent?.trim() ?? '',
+			url: item.querySelector('a.l1')?.getAttribute('href') ?? '',
+			snippet: item.querySelector('.generic-snippet .content')?.textContent?.trim() ?? '',
+		};
 	});
 }

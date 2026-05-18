@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "webtools",
+	"name": "stealth-webtools",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-05-15",
 	"observability": {
@@ -15,31 +15,21 @@
 	"ai": { "binding": "AI" },
 	"containers": [
 		{
-			"class_name": "RayoBrowser",
-			"image": "docker.io/rayobyte/rayobrowse:0.2.1",
-			"instance_type": "standard-2",
-			"max_instances": 100,
+			"class_name": "CloakBrowser",
+			"image": "./container/Dockerfile",
+			"instance_type": "standard-4",
+			"max_instances": 1,
 		},
 	],
 	"durable_objects": {
 		"bindings": [
 			{ "class_name": "WebToolsMCP", "name": "MCP_OBJECT" },
-			{ "class_name": "RayoBrowser", "name": "RAYO" },
+			{ "class_name": "CloakBrowser", "name": "CLOAK" },
 		],
 	},
 	"migrations": [
-		{ "tag": "v1", "new_sqlite_classes": ["WebToolsMCP", "RayoBrowser"] },
+		{ "tag": "v1", "new_sqlite_classes": ["WebToolsMCP", "CloakBrowser"] },
 	],
 	// Secrets (set via `wrangler secret put` or `.dev.vars` locally):
 	// - API_KEY: shared key required by the worker (Authorization: Bearer or ?key=)
-	/**
-	 * Static Assets
-	 * https://developers.cloudflare.com/workers/static-assets/binding/
-	 */
-	// "assets": {  "directory": "./public/",  "binding": "ASSETS" }
-	/**
-	 * Service Bindings (communicate between multiple Workers)
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-	 */
-	// "services": [  {   "binding": "MY_SERVICE",   "service": "my-service"  } ]
 }

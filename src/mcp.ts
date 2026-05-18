@@ -12,7 +12,7 @@ import { rewritePageRequest } from './urlRewrite';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.2.5',
+		version: '0.3.0',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 

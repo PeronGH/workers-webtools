@@ -1,14 +1,15 @@
+import { getContainer } from '@cloudflare/containers';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { askAboutContent } from './askAboutContent';
-import { RayoBrowser } from './browser';
+import { CloakBrowser } from './browser';
 import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
 import { WebToolsMCP } from './mcp';
 import { search } from './search';
 import { rewritePageRequest } from './urlRewrite';
 
-export { RayoBrowser, WebToolsMCP };
+export { CloakBrowser, WebToolsMCP };
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -64,6 +65,11 @@ app.get('/search', async (c) => {
 	}
 	const results = await search(query, { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') });
 	return c.json(results);
+});
+
+app.post('/restart', async (c) => {
+	await getContainer(c.env.CLOAK).destroy();
+	return c.body(null, 204);
 });
 
 export default app;
