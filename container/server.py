@@ -79,7 +79,9 @@ async def _wait_anubis(page) -> None:
 
 async def _wait_brave_captcha(page) -> None:
     await page.wait_for_load_state("networkidle", timeout=NAV_TIMEOUT_MS)
-    await page.wait_for_selector(".captcha-card", state="hidden", timeout=NAV_TIMEOUT_MS)
+    if await page.query_selector("#pow-captcha-content"):
+        await page.click('button:has-text("I\'m not a robot")', timeout=NAV_TIMEOUT_MS)
+        await page.wait_for_selector("#pow-captcha-content", state="detached", timeout=NAV_TIMEOUT_MS)
 
 
 SITE_HANDLERS = {
