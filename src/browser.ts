@@ -16,8 +16,7 @@ export type SnapshotData = FetchedHtml & { png: Uint8Array };
  *  keeps all traffic on the single shared instance. */
 export class CloakBrowser extends Container {
 	defaultPort = 8000;
-	// sleepAfter intentionally unset — uses the SDK default (10m).
-	// Idle expiry doubles as a free recycle of the shared browser.
+	sleepAfter = '1h';
 }
 
 const CLOAK_ORIGIN = 'http://cloak';
