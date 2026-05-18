@@ -67,6 +67,13 @@ app.get('/search', async (c) => {
 	return c.json(results);
 });
 
+app.all('/raw/*', async (c) => {
+	const incoming = c.req.raw;
+	const inUrl = new URL(incoming.url);
+	const target = `http://cloak${inUrl.pathname.slice('/raw'.length)}${inUrl.search}`;
+	return getContainer(c.env.CLOAK).fetch(new Request(target, incoming));
+});
+
 app.post('/restart', async (c) => {
 	await getContainer(c.env.CLOAK).destroy();
 	return c.body(null, 204);
