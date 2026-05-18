@@ -73,19 +73,26 @@ async def _block_text_resources(route) -> None:
         await route.continue_()
 
 
-async def _wait_anubis(page) -> None:
-    await page.wait_for_selector("#anubis_challenge", state="detached", timeout=NAV_TIMEOUT_MS)
-
-
-async def _wait_brave_captcha(page) -> None:
+async def _wait_generic(page) -> None:
+    await page.wait_for_selector(
+        "#anubis_challenge", state="detached", timeout=NAV_TIMEOUT_MS
+    )
     await page.wait_for_load_state("networkidle", timeout=NAV_TIMEOUT_MS)
+
+
+async def _wait_brave(page) -> None:
+    await page.wait_for_selector(
+        '#pow-captcha-content, div.snippet[data-type="web"]', timeout=NAV_TIMEOUT_MS
+    )
     if await page.query_selector("#pow-captcha-content"):
         await page.click('button:has-text("I\'m not a robot")', timeout=NAV_TIMEOUT_MS)
-        await page.wait_for_selector("#pow-captcha-content", state="detached", timeout=NAV_TIMEOUT_MS)
+        await page.wait_for_selector(
+            "#pow-captcha-content", state="detached", timeout=NAV_TIMEOUT_MS
+        )
 
 
 SITE_HANDLERS = {
-    "search.brave.com": _wait_brave_captcha,
+    "search.brave.com": _wait_brave,
 }
 
 
@@ -93,16 +100,12 @@ async def _settle(page, url: str) -> None:
     try:
         await page.goto(url, wait_until="domcontentloaded", timeout=NAV_TIMEOUT_MS)
     except Exception as exc:
-        log.info("goto error (continuing with partial page): %s", exc)
+        log.info("goto error: %s", exc)
     host = urlparse(url).hostname or ""
     try:
-        await SITE_HANDLERS.get(host, _wait_anubis)(page)
+        await SITE_HANDLERS.get(host, _wait_generic)(page)
     except Exception as exc:
-        log.info("site handler error (continuing): %s", exc)
-    try:
-        await page.wait_for_load_state("networkidle", timeout=NAV_TIMEOUT_MS)
-    except Exception:
-        pass
+        log.info("site handler error: %s", exc)
 
 
 async def _capture(page) -> tuple[str, str, str]:
@@ -133,7 +136,9 @@ async def handle_fetch(request: web.Request) -> web.Response:
         html, final_url, content_type = await _capture(page)
     finally:
         await context.close()
-    return web.json_response({"html": html, "finalUrl": final_url, "contentType": content_type})
+    return web.json_response(
+        {"html": html, "finalUrl": final_url, "contentType": content_type}
+    )
 
 
 async def handle_snapshot(request: web.Request) -> web.Response:
@@ -192,7 +197,9 @@ async def on_cleanup(app: web.Application) -> None:
 
 
 def main() -> None:
-    app = web.Application(client_max_size=1024 * 1024 * 16, middlewares=[exit_on_dead_browser])
+    app = web.Application(
+        client_max_size=1024 * 1024 * 16, middlewares=[exit_on_dead_browser]
+    )
     app.router.add_get("/", handle_health)
     app.router.add_post("/fetch", handle_fetch)
     app.router.add_post("/snapshot", handle_snapshot)
