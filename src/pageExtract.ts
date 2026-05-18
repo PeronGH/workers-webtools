@@ -2,10 +2,26 @@ import { Defuddle } from 'defuddle/node';
 import { parseHTML } from 'linkedom';
 
 const REDDIT_LISTING = /^\/(r|u|user)\/[^/]+(\/[^/]+)?\/?$/;
+const SE_QUESTION = /^\/questions\/\d+(\/|$)/;
 
-/** Defuddle's Reddit extractor only returns the first post on listing pages. */
+// Stack Exchange network — all run the same Q&A engine, same DOM, Defuddle mangles question pages the same way.
+const STACKEXCHANGE_HOSTS = new Set([
+	'stackoverflow.com',
+	'serverfault.com',
+	'superuser.com',
+	'askubuntu.com',
+	'mathoverflow.net',
+	'stackapps.com',
+]);
+
+function isStackExchange(hostname: string): boolean {
+	return STACKEXCHANGE_HOSTS.has(hostname) || hostname.endsWith('.stackexchange.com');
+}
+
+/** Hosts/paths where Defuddle's extractor mangles the structure. */
 function shouldDefuddle(url: URL): boolean {
 	if (/(^|\.)reddit\.com$/.test(url.hostname) && REDDIT_LISTING.test(url.pathname)) return false;
+	if (isStackExchange(url.hostname) && SE_QUESTION.test(url.pathname)) return false;
 	return true;
 }
 
