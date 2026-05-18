@@ -170,7 +170,7 @@ async def exit_on_dead_browser(request: web.Request, handler):
 
 async def on_startup(app: web.Application) -> None:
     log.info("launching CloakBrowser...")
-    app["browser"] = await launch_async(headless=True)
+    app["browser"] = await launch_async(headless=False)
     log.info("CloakBrowser ready")
 
 
