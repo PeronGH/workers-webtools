@@ -2,8 +2,8 @@
 
 Exposes two endpoints backed by a single shared CloakBrowser:
 
-    POST /fetch     body {"url", "mode": "spa"|"ssr"}  -> text/html
-    POST /snapshot  body {"url"}                       -> JSON {html, screenshotBase64, ...}
+    POST /fetch     body {"url"}  -> JSON {html, finalUrl, contentType}
+    POST /snapshot  body {"url"}  -> JSON {html, screenshotBase64, finalUrl, contentType}
 
 Each request runs in its own browser.new_context() so cookies / storage are
 isolated. The browser itself is launched once on startup; recovery from a
@@ -16,6 +16,7 @@ import asyncio
 import base64
 import logging
 import os
+from urllib.parse import urlparse
 
 from aiohttp import web
 from cloakbrowser import launch_async
@@ -72,20 +73,34 @@ async def _block_text_resources(route) -> None:
         await route.continue_()
 
 
-async def _settle(page, url: str, mode: str) -> None:
+async def _wait_anubis(page) -> None:
+    await page.wait_for_selector("#anubis_challenge", state="detached", timeout=NAV_TIMEOUT_MS)
+
+
+async def _wait_brave_captcha(page) -> None:
+    await page.wait_for_load_state("networkidle", timeout=NAV_TIMEOUT_MS)
+    await page.wait_for_selector(".captcha-card", state="hidden", timeout=NAV_TIMEOUT_MS)
+
+
+SITE_HANDLERS = {
+    "search.brave.com": _wait_brave_captcha,
+}
+
+
+async def _settle(page, url: str) -> None:
     try:
         await page.goto(url, wait_until="domcontentloaded", timeout=NAV_TIMEOUT_MS)
     except Exception as exc:
         log.info("goto error (continuing with partial page): %s", exc)
+    host = urlparse(url).hostname or ""
     try:
-        await page.wait_for_selector("#anubis_challenge", state="detached", timeout=NAV_TIMEOUT_MS)
+        await SITE_HANDLERS.get(host, _wait_anubis)(page)
+    except Exception as exc:
+        log.info("site handler error (continuing): %s", exc)
+    try:
+        await page.wait_for_load_state("networkidle", timeout=NAV_TIMEOUT_MS)
     except Exception:
         pass
-    if mode != "ssr":
-        try:
-            await page.wait_for_load_state("networkidle", timeout=NAV_TIMEOUT_MS)
-        except Exception:
-            pass
 
 
 async def _capture(page) -> tuple[str, str, str]:
@@ -105,23 +120,14 @@ def _require_url(data: dict) -> str:
     return url
 
 
-def _require_mode(data: dict) -> str:
-    mode = data.get("mode", "spa")
-    if mode not in ("spa", "ssr"):
-        raise web.HTTPBadRequest(reason="`mode` must be 'spa' or 'ssr'")
-    return mode
-
-
 async def handle_fetch(request: web.Request) -> web.Response:
-    data = await request.json()
-    url = _require_url(data)
-    mode = _require_mode(data)
+    url = _require_url(await request.json())
     browser = request.app["browser"]
     context = await browser.new_context(viewport=VIEWPORT)
     try:
         await context.route("**/*", _block_text_resources)
         page = await context.new_page()
-        await _settle(page, url, mode)
+        await _settle(page, url)
         html, final_url, content_type = await _capture(page)
     finally:
         await context.close()
@@ -135,7 +141,7 @@ async def handle_snapshot(request: web.Request) -> web.Response:
     try:
         await context.add_init_script(EAGER_LAZY_JS)
         page = await context.new_page()
-        await _settle(page, url, "spa")
+        await _settle(page, url)
         png = await page.screenshot(full_page=True, type="png")
         html, final_url, content_type = await _capture(page)
     finally:

@@ -1,12 +1,15 @@
 import { Container, getContainer } from '@cloudflare/containers';
 
+// ---------------------------------------------------------------------------
+// Public types
+// ---------------------------------------------------------------------------
+
 /** Worker-runtime context. `ctx` lets callers detach background work via
  *  ctx.waitUntil. `rayId` is preserved for log correlation only — the
  *  Container is a singleton, so it no longer selects which instance to use. */
 export type WorkerCtx = { env: Env; ctx?: ExecutionContext; rayId?: string };
 
-/** Per-call rendering options. */
-export type PageRequest = { url: string; renderMode?: 'spa' | 'ssr' };
+export type PageRequest = { url: string };
 
 export type FetchedHtml = { html: string; finalUrl: string; contentType: string | undefined };
 export type SnapshotData = FetchedHtml & { png: Uint8Array };
@@ -19,7 +22,33 @@ export class CloakBrowser extends Container {
 	sleepAfter = '1h';
 }
 
+// ---------------------------------------------------------------------------
+// RPC contract with container/server.py — keep request/response shapes in
+// lockstep with the Python handlers in container/server.py.
+// ---------------------------------------------------------------------------
+
+type Routes = {
+	'/fetch': {
+		req: { url: string };
+		res: { html: string; finalUrl: string; contentType: string };
+	};
+	'/snapshot': {
+		req: { url: string };
+		res: { html: string; screenshotBase64: string; finalUrl: string; contentType: string };
+	};
+};
+
 const CLOAK_ORIGIN = 'http://cloak';
+
+async function rpc<P extends keyof Routes>(env: Env, path: P, body: Routes[P]['req']): Promise<Routes[P]['res']> {
+	const r = await getContainer(env.CLOAK).fetch(`${CLOAK_ORIGIN}${path}`, {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify(body),
+	});
+	if (!r.ok) throw new Error(`CloakBrowser ${path} ${r.status}: ${await r.text()}`);
+	return (await r.json()) as Routes[P]['res'];
+}
 
 function decodeBase64(b64: string): Uint8Array {
 	const bin = atob(b64);
@@ -28,14 +57,12 @@ function decodeBase64(b64: string): Uint8Array {
 	return out;
 }
 
+// ---------------------------------------------------------------------------
+// Public helpers
+// ---------------------------------------------------------------------------
+
 export async function fetchHtml({ env }: WorkerCtx, request: PageRequest): Promise<FetchedHtml> {
-	const r = await getContainer(env.CLOAK).fetch(`${CLOAK_ORIGIN}/fetch`, {
-		method: 'POST',
-		headers: { 'content-type': 'application/json' },
-		body: JSON.stringify({ url: request.url, mode: request.renderMode ?? 'spa' }),
-	});
-	if (!r.ok) throw new Error(`CloakBrowser /fetch ${r.status}: ${await r.text()}`);
-	const data = (await r.json()) as { html: string; finalUrl: string; contentType: string };
+	const data = await rpc(env, '/fetch', { url: request.url });
 	return {
 		html: data.html,
 		finalUrl: data.finalUrl || request.url,
@@ -44,13 +71,7 @@ export async function fetchHtml({ env }: WorkerCtx, request: PageRequest): Promi
 }
 
 export async function fetchSnapshotData({ env }: WorkerCtx, request: PageRequest): Promise<SnapshotData> {
-	const r = await getContainer(env.CLOAK).fetch(`${CLOAK_ORIGIN}/snapshot`, {
-		method: 'POST',
-		headers: { 'content-type': 'application/json' },
-		body: JSON.stringify({ url: request.url }),
-	});
-	if (!r.ok) throw new Error(`CloakBrowser /snapshot ${r.status}: ${await r.text()}`);
-	const data = (await r.json()) as { html: string; screenshotBase64: string; finalUrl: string; contentType: string };
+	const data = await rpc(env, '/snapshot', { url: request.url });
 	return {
 		html: data.html,
 		png: decodeBase64(data.screenshotBase64),
