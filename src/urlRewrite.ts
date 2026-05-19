@@ -1,4 +1,4 @@
-import type { PageRequest } from './browser';
+import type { PageRequest } from './pageTypes';
 
 type UrlMatcher = (url: URL) => boolean;
 type UrlRewrite = (url: URL) => void;

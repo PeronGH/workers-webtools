@@ -2,7 +2,7 @@ import { getContainer } from '@cloudflare/containers';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { askAboutPage } from './askAboutContent';
-import { CloakBrowser } from './browser';
+import { CloakBrowser } from './cloakBrowser';
 import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
 import { WebToolsMCP } from './mcp';
