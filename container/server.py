@@ -15,7 +15,6 @@ from __future__ import annotations
 import asyncio
 import base64
 import logging
-import os
 from urllib.parse import urlparse
 
 from aiohttp import web
@@ -152,26 +151,39 @@ async def handle_health(_: web.Request) -> web.Response:
     return web.json_response({"ok": True})
 
 
+async def _launch_browser():
+    return await launch_async(headless=False, humanize=True)
+
+
+async def _restart_browser(app: web.Application) -> None:
+    async with app["restart_lock"]:
+        browser = app.get("browser")
+        if browser is not None and browser.is_connected():
+            return
+        if browser is not None:
+            try:
+                await browser.close()
+            except Exception:
+                pass
+        app["browser"] = await _launch_browser()
+        log.info("CloakBrowser restarted")
+
+
 @web.middleware
-async def exit_on_dead_browser(request: web.Request, handler):
-    """If the shared browser is gone, schedule a hard process exit so
-    Cloudflare Containers rehydrates on the next request. Without this the
-    server would keep returning 500s forever after a browser crash."""
+async def restart_on_dead_browser(request: web.Request, handler):
     try:
         return await handler(request)
     finally:
         browser = request.app.get("browser")
         if browser is not None and not browser.is_connected():
-            log.error("browser disconnected; exiting for container restart")
-            asyncio.get_running_loop().call_later(0.5, lambda: os._exit(1))
+            log.error("browser disconnected; scheduling restart")
+            asyncio.create_task(_restart_browser(request.app))
 
 
 async def on_startup(app: web.Application) -> None:
     log.info("launching CloakBrowser...")
-    app["browser"] = await launch_async(
-        headless=False,
-        humanize=True,
-    )
+    app["restart_lock"] = asyncio.Lock()
+    app["browser"] = await _launch_browser()
     log.info("CloakBrowser ready")
 
 
@@ -186,7 +198,7 @@ async def on_cleanup(app: web.Application) -> None:
 
 def main() -> None:
     app = web.Application(
-        client_max_size=1024 * 1024 * 16, middlewares=[exit_on_dead_browser]
+        client_max_size=1024 * 1024 * 16, middlewares=[restart_on_dead_browser]
     )
     app.router.add_get("/", handle_health)
     app.router.add_post("/fetch", handle_fetch)
