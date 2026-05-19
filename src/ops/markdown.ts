@@ -1,4 +1,5 @@
-import { extractPage } from '../extract/defuddle';
+import { Defuddle } from 'defuddle/node';
+import { parseHTML } from 'linkedom';
 import { toMarkdown } from '../extract/markdown';
 import { fetchHtml } from '../render/container';
 import { fetchFastHtml } from '../render/fast';
@@ -6,7 +7,8 @@ import type { FetchedHtml, PageRequest, WorkerCtx } from '../types';
 
 export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Promise<string> {
 	const page = await fetchPage(worker, request);
-	const defuddle = await extractPage(page);
+	const { document } = parseHTML(page.html);
+	const defuddle = await Defuddle(document, page.finalUrl, { includeReplies: true });
 	return toMarkdown(page, defuddle, worker.env);
 }
 
