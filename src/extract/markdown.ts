@@ -1,6 +1,5 @@
-import { Defuddle, type DefuddleResponse } from 'defuddle/node';
-import { parseHTML } from 'linkedom';
-import type { FetchedHtml } from './pageTypes';
+import type { DefuddleResponse } from 'defuddle/node';
+import type { FetchedHtml } from '../types';
 
 const REDDIT_LISTING = /^\/(r|u|user)\/[^/]+(\/[^/]+)?\/?$/;
 const SE_QUESTION = /^\/questions\/\d+(\/|$)/;
@@ -25,21 +24,6 @@ function shouldUseDefuddleContent(url: URL): boolean {
 	if (/(^|\.)reddit\.com$/.test(url.hostname) && REDDIT_LISTING.test(url.pathname)) return false;
 	if (isStackExchange(url.hostname) && SE_QUESTION.test(url.pathname)) return false;
 	return true;
-}
-
-/** Parse the fetched HTML through Defuddle for metadata and cleaned content. */
-export async function extractPage(page: FetchedHtml): Promise<DefuddleResponse> {
-	const { document } = parseHTML(page.html);
-	return Defuddle(document, page.finalUrl, { includeReplies: true });
-}
-
-/** Classify a Defuddle result as a Cloudflare interstitial / challenge page. */
-export function isCloudflareChallenge(defuddle: DefuddleResponse): boolean {
-	return (
-		defuddle.title === 'Just a moment...' ||
-		defuddle.site === 'Cloudflare' ||
-		defuddle.content.trim() === ''
-	);
 }
 
 /**

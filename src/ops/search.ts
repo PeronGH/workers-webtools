@@ -1,5 +1,6 @@
 import { parseHTML } from 'linkedom';
-import { fetchFastHtml, type WorkerCtx } from './page';
+import { fetchFastHtml } from '../render/fast';
+import type { WorkerCtx } from '../types';
 
 export type SearchResult = {
 	title: string;

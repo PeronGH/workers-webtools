@@ -1,5 +1,5 @@
 import Cloudflare from 'cloudflare';
-import type { FetchedHtml, PageRequest, WorkerCtx } from './pageTypes';
+import type { FetchedHtml, PageRequest, WorkerCtx } from '../types';
 
 export async function fetchFastHtml({ env }: WorkerCtx, request: PageRequest): Promise<FetchedHtml> {
 	const accountId = env.CLOUDFLARE_ACCOUNT_ID?.trim();

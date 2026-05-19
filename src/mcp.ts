@@ -2,12 +2,12 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
 import { Buffer } from 'node:buffer';
 import { z } from 'zod';
-import { askAboutPage } from './askAboutContent';
-import { fetchMarkdown } from './fetchMarkdown';
-import { fetchScreenshot } from './fetchScreenshot';
-import { fetchSnapshot } from './fetchSnapshot';
-import { search } from './search';
-import { rewritePageRequest } from './pageRewrite';
+import { askAboutPage } from './ops/ask';
+import { fetchMarkdown } from './ops/markdown';
+import { fetchScreenshot } from './ops/screenshot';
+import { fetchSnapshot } from './ops/snapshot';
+import { search } from './ops/search';
+import { rewritePageRequest } from './rewrite';
 
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({

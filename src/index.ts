@@ -1,13 +1,13 @@
 import { getContainer } from '@cloudflare/containers';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { askAboutPage } from './askAboutContent';
-import { CloakBrowser } from './cloakBrowser';
-import { fetchMarkdown } from './fetchMarkdown';
-import { fetchScreenshot } from './fetchScreenshot';
 import { WebToolsMCP } from './mcp';
-import { search } from './search';
-import { rewritePageRequest } from './pageRewrite';
+import { askAboutPage } from './ops/ask';
+import { fetchMarkdown } from './ops/markdown';
+import { fetchScreenshot } from './ops/screenshot';
+import { search } from './ops/search';
+import { CloakBrowser } from './render/container';
+import { rewritePageRequest } from './rewrite';
 
 export { CloakBrowser, WebToolsMCP };
 

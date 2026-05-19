@@ -1,8 +1,11 @@
-import type { PageRequest } from './pageTypes';
-import { removeSuffix } from './utils';
+import type { PageRequest } from './types';
 
 type UrlMatcher = (url: URL) => boolean;
 type UrlRewrite = (url: URL) => void;
+
+function removeSuffix(value: string, suffix: string): string {
+	return value.endsWith(suffix) ? value.slice(0, -suffix.length) : value;
+}
 
 export const URL_REWRITES: readonly (readonly [UrlMatcher, UrlRewrite])[] = [
 	[

@@ -1,4 +1,7 @@
-import { extractPage, fetchSnapshotData, toMarkdown, type PageRequest, type WorkerCtx } from './page';
+import { extractPage } from '../extract/defuddle';
+import { toMarkdown } from '../extract/markdown';
+import { fetchSnapshotData } from '../render/container';
+import type { PageRequest, WorkerCtx } from '../types';
 
 export type Snapshot = { markdown: string; png: Uint8Array };
 

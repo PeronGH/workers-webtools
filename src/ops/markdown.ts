@@ -1,12 +1,8 @@
-import {
-	extractPage,
-	fetchFastHtml,
-	fetchHtml,
-	isCloudflareChallenge,
-	toMarkdown,
-	type PageRequest,
-	type WorkerCtx,
-} from './page';
+import { extractPage, isCloudflareChallenge } from '../extract/defuddle';
+import { toMarkdown } from '../extract/markdown';
+import { fetchHtml } from '../render/container';
+import { fetchFastHtml } from '../render/fast';
+import type { PageRequest, WorkerCtx } from '../types';
 
 export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Promise<string> {
 	const { page, defuddle } = await loadExtraction(worker, request);

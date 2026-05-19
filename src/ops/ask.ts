@@ -1,5 +1,5 @@
-import { fetchMarkdown } from './fetchMarkdown';
-import type { PageRequest, WorkerCtx } from './page';
+import type { PageRequest, WorkerCtx } from '../types';
+import { fetchMarkdown } from './markdown';
 
 const MODEL = '@cf/moonshotai/kimi-k2.6';
 

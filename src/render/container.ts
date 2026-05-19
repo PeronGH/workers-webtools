@@ -1,5 +1,5 @@
 import { Container, getContainer } from '@cloudflare/containers';
-import type { FetchedHtml, PageRequest, SnapshotData, WorkerCtx } from './pageTypes';
+import type { FetchedHtml, PageRequest, SnapshotData, WorkerCtx } from '../types';
 
 /** Container hosting one CloakBrowser instance. `max_instances: 1` in
  *  wrangler.jsonc plus a default `getContainer(env.CLOAK)` (no name)
