@@ -186,7 +186,6 @@ async def on_startup(app: web.Application) -> None:
     app["browser"] = await launch_async(
         headless=False,
         humanize=True,
-        args=["--disable-features=AsyncDns"],
     )
     log.info("CloakBrowser ready")
 
