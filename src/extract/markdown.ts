@@ -33,19 +33,6 @@ function shouldUseDefuddleContent(url: URL): boolean {
  * Workers runtime lacks).
  */
 export async function toMarkdown(page: FetchedHtml, defuddle: DefuddleResponse, env: Env): Promise<string> {
-	const ct = page.contentType?.split(';')[0]?.trim().toLowerCase();
-	const isConvertible =
-		ct === undefined ||
-		ct === '' ||
-		ct.startsWith('text/') ||
-		ct === 'application/xhtml+xml' ||
-		ct === 'application/json' ||
-		ct === 'application/xml' ||
-		ct.endsWith('+json') ||
-		ct.endsWith('+xml');
-	if (!isConvertible) {
-		return `Cannot convert ${page.contentType} resource to Markdown. Source: ${page.finalUrl}`;
-	}
 	const pageUrl = new URL(page.finalUrl);
 	let contentHtml = page.html;
 	const meta: Record<string, string | undefined> = { url: page.finalUrl };
