@@ -21,7 +21,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			'fetch',
 			{
 				description:
-					'Fetch a webpage, pdf or image as Markdown. ' +
+					'Fetch a URL as Markdown. Handles webpages, images, and rich documents (PDF, MS Office, OpenDocument, Apple iWork, etc.). ' +
 					'Output can be very long. ' +
 					'You should ALWAYS retry with fast=false if the result seems incomplete or blocked.',
 				inputSchema: {
