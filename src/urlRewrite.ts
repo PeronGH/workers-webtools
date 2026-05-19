@@ -5,6 +5,14 @@ type UrlRewrite = (url: URL) => string;
 
 export const URL_REWRITES: readonly (readonly [UrlMatcher, UrlRewrite])[] = [
 	[
+		(url) => url.hostname === 'developers.cloudflare.com' && url.pathname.endsWith('/'),
+		(url) => {
+			const rewritten = new URL(url);
+			rewritten.pathname = `${url.pathname}index.md`;
+			return rewritten.toString();
+		},
+	],
+	[
 		(url) => ['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'].includes(url.hostname),
 		(url) => {
 			const rewritten = new URL(url);
