@@ -77,17 +77,16 @@ export class WebToolsMCP extends McpAgent<Env> {
 			{
 				description:
 					'Run `fetch` on the URL under the hood, then have an LLM respond to your prompt about its content. ' +
-					'Fast mode is enabled by default; pass fast: false to use the stealth browser. ' +
+					'Uses the stealth browser fetch path. ' +
 					'Slow due to the LLM round trip; ' +
 					'use when you want a focused answer instead of the raw page Markdown.',
 				inputSchema: {
 					url: z.url(),
 					prompt: z.string(),
-					fast: z.boolean().default(true),
 				},
 			},
-			async ({ url, prompt, fast }) => {
-				const request = rewritePageRequest({ url, fast });
+			async ({ url, prompt }) => {
+				const request = rewritePageRequest({ url, fast: false });
 				const markdown = await fetchMarkdown({ env: this.env }, request);
 				const answer = await askAboutContent(markdown, request.url, prompt, this.env);
 				return { content: [{ type: 'text', text: answer }] };

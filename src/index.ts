@@ -43,7 +43,7 @@ app.get('/fetch/*', async (c) => {
 app.post('/ask/*', async (c) => {
 	const target = extractTarget(c, '/ask/');
 	const prompt = await c.req.text();
-	const request = rewritePageRequest({ url: target, fast: c.req.header('x-fast-mode')?.trim() !== '0' });
+	const request = rewritePageRequest({ url: target, fast: false });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
 	const markdown = await fetchMarkdown(worker, request);
 	const answer = await askAboutContent(markdown, request.url, prompt, c.env);
