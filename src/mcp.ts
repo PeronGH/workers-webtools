@@ -12,7 +12,7 @@ import { rewritePageRequest } from './pageRewrite';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.4.0',
+		version: '0.4.1',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -23,15 +23,14 @@ export class WebToolsMCP extends McpAgent<Env> {
 				description:
 					'Fetch a webpage and return its rendered Markdown. ' +
 					'Output can be very long. ' +
+					'You should retry with fast=false if the result seems incomplete. ' +
 					'Cannot handle PDFs or other binary content.',
 				inputSchema: {
 					url: z.url(),
 					fast: z
 						.boolean()
 						.default(true)
-						.describe(
-							'Use the faster fetch path. Leave enabled unless the page needs full SPA rendering or stronger anti-bot handling.',
-						),
+						.describe('Use the faster fetch path. Leave enabled unless the page needs full SPA rendering or stronger anti-bot handling.'),
 				},
 			},
 			async ({ url, fast }) => {
