@@ -8,8 +8,8 @@ export async function extractPage(page: FetchedHtml): Promise<DefuddleResponse> 
 	return Defuddle(document, page.finalUrl, { includeReplies: true });
 }
 
-/** Classify a Defuddle result as a Cloudflare interstitial / challenge page. */
-export function isCloudflareChallenge(defuddle: DefuddleResponse): boolean {
+/** Classify a Defuddle result as a blocked / interstitial response (typically Cloudflare). */
+export function isResponseBlocked(defuddle: DefuddleResponse): boolean {
 	return (
 		defuddle.title === 'Just a moment...' ||
 		defuddle.title === 'Attention Required!' ||

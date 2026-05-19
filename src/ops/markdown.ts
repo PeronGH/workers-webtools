@@ -1,4 +1,4 @@
-import { extractPage, isCloudflareChallenge } from '../extract/defuddle';
+import { extractPage, isResponseBlocked } from '../extract/defuddle';
 import { toMarkdown } from '../extract/markdown';
 import { fetchHtml } from '../render/container';
 import { fetchFastHtml } from '../render/fast';
@@ -14,7 +14,7 @@ async function loadExtraction(worker: WorkerCtx, request: PageRequest) {
 		try {
 			const page = await fetchFastHtml(worker, request);
 			const defuddle = await extractPage(page);
-			if (!isCloudflareChallenge(defuddle)) return { page, defuddle };
+			if (!isResponseBlocked(defuddle)) return { page, defuddle };
 		} catch {
 			// fast renderer threw — fall through to container
 		}
