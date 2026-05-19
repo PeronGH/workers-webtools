@@ -12,7 +12,7 @@ import { rewritePageRequest } from './rewrite';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.4.2',
+		version: '0.5.0',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -21,10 +21,9 @@ export class WebToolsMCP extends McpAgent<Env> {
 			'fetch',
 			{
 				description:
-					'Fetch a webpage as Markdown. ' +
+					'Fetch a webpage, pdf or image as Markdown. ' +
 					'Output can be very long. ' +
-					'You should ALWAYS retry with fast=false if the result seems incomplete or blocked. ' +
-					'Cannot handle PDFs or other binary content.',
+					'You should ALWAYS retry with fast=false if the result seems incomplete or blocked.',
 				inputSchema: {
 					url: z.url(),
 					fast: z.boolean().default(true).describe('Initial HTML only. Disable for SPAs or anti-bot pages.'),
