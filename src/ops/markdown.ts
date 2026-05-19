@@ -1,5 +1,4 @@
 import { extractPage } from '../extract/defuddle';
-import { isGarbageOutput } from '../extract/garbage';
 import { toMarkdown } from '../extract/markdown';
 import { fetchHtml } from '../render/container';
 import { fetchDirect } from '../render/direct';
@@ -20,13 +19,13 @@ export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Pr
 	if (first.src === 'direct') {
 		if (first.result) return first.result;
 		const page = await pagePromise;
-		const { defuddle } = await extractPage(page);
+		const defuddle = await extractPage(page);
 		return toMarkdown(page, defuddle, worker.env);
 	}
 
 	const page = first.result;
-	const { document, defuddle } = await extractPage(page);
-	if (!isGarbageOutput(document) && defuddle.wordCount > 0) {
+	const defuddle = await extractPage(page);
+	if (defuddle.wordCount > 0) {
 		return toMarkdown(page, defuddle, worker.env);
 	}
 	const direct = await directPromise;
