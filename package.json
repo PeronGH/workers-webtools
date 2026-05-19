@@ -17,6 +17,7 @@
 		"@cloudflare/containers": "^0.3.4",
 		"@modelcontextprotocol/sdk": "^1.29.0",
 		"agents": "^0.12.4",
+		"cloudflare": "^6.2.0",
 		"defuddle": "^0.18.1",
 		"hono": "^4.12.18",
 		"linkedom": "^0.18.12",

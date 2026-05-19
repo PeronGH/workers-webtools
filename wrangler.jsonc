@@ -32,4 +32,6 @@
 	],
 	// Secrets (set via `wrangler secret put` or `.dev.vars` locally):
 	// - API_KEY: shared key required by the worker (Authorization: Bearer or ?key=)
+	// - CLOUDFLARE_ACCOUNT_ID: account used for Browser Run Quick Actions fast mode
+	// - CLOUDFLARE_API_TOKEN: token with Browser Rendering - Edit permission for fast mode
 }

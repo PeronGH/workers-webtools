@@ -21,13 +21,17 @@ export class WebToolsMCP extends McpAgent<Env> {
 			'fetch',
 			{
 				description:
-					'Fetch a webpage using headless browser and return its rendered Markdown. ' +
+					'Fetch a webpage and return its rendered Markdown. ' +
+					'Fast mode uses Cloudflare Browser Run Quick Actions by default; pass fast: false to use the stealth browser. ' +
 					'Output can be very long. ' +
 					'Cannot handle PDFs or other binary content.',
-				inputSchema: { url: z.url() },
+				inputSchema: {
+					url: z.url(),
+					fast: z.boolean().default(true),
+				},
 			},
-			async ({ url }) => {
-				const request = rewritePageRequest({ url });
+			async ({ url, fast }) => {
+				const request = rewritePageRequest({ url, fast });
 				const markdown = await fetchMarkdown({ env: this.env }, request);
 				return { content: [{ type: 'text', text: markdown }] };
 			},
@@ -73,12 +77,17 @@ export class WebToolsMCP extends McpAgent<Env> {
 			{
 				description:
 					'Run `fetch` on the URL under the hood, then have an LLM respond to your prompt about its content. ' +
+					'Fast mode is enabled by default; pass fast: false to use the stealth browser. ' +
 					'Slow due to the LLM round trip; ' +
 					'use when you want a focused answer instead of the raw page Markdown.',
-				inputSchema: { url: z.url(), prompt: z.string() },
+				inputSchema: {
+					url: z.url(),
+					prompt: z.string(),
+					fast: z.boolean().default(true),
+				},
 			},
-			async ({ url, prompt }) => {
-				const request = rewritePageRequest({ url });
+			async ({ url, prompt, fast }) => {
+				const request = rewritePageRequest({ url, fast });
 				const markdown = await fetchMarkdown({ env: this.env }, request);
 				const answer = await askAboutContent(markdown, request.url, prompt, this.env);
 				return { content: [{ type: 'text', text: answer }] };

@@ -34,7 +34,7 @@ function extractTarget(c: { req: { url: string } }, prefix: string): string {
 
 app.get('/fetch/*', async (c) => {
 	const target = extractTarget(c, '/fetch/');
-	const request = rewritePageRequest({ url: target });
+	const request = rewritePageRequest({ url: target, fast: c.req.header('x-fast-mode')?.trim() !== '0' });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
 	const markdown = await fetchMarkdown(worker, request);
 	return c.body(markdown, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
@@ -43,7 +43,7 @@ app.get('/fetch/*', async (c) => {
 app.post('/ask/*', async (c) => {
 	const target = extractTarget(c, '/ask/');
 	const prompt = await c.req.text();
-	const request = rewritePageRequest({ url: target });
+	const request = rewritePageRequest({ url: target, fast: c.req.header('x-fast-mode')?.trim() !== '0' });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
 	const markdown = await fetchMarkdown(worker, request);
 	const answer = await askAboutContent(markdown, request.url, prompt, c.env);

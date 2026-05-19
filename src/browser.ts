@@ -1,4 +1,5 @@
 import { Container, getContainer } from '@cloudflare/containers';
+import Cloudflare from 'cloudflare';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -9,7 +10,7 @@ import { Container, getContainer } from '@cloudflare/containers';
  *  Container is a singleton, so it no longer selects which instance to use. */
 export type WorkerCtx = { env: Env; ctx?: ExecutionContext; rayId?: string };
 
-export type PageRequest = { url: string };
+export type PageRequest = { url: string; fast?: boolean };
 
 export type FetchedHtml = { html: string; finalUrl: string; contentType: string | undefined };
 export type SnapshotData = FetchedHtml & { png: Uint8Array };
@@ -67,6 +68,26 @@ export async function fetchHtml({ env }: WorkerCtx, request: PageRequest): Promi
 		html: data.html,
 		finalUrl: data.finalUrl || request.url,
 		contentType: data.contentType || undefined,
+	};
+}
+
+export async function fetchFastHtml({ env }: WorkerCtx, request: PageRequest): Promise<FetchedHtml> {
+	const accountId = env.CLOUDFLARE_ACCOUNT_ID?.trim();
+	const apiToken = env.CLOUDFLARE_API_TOKEN?.trim();
+	if (!accountId || !apiToken) {
+		throw new Error(
+			'Fast mode requires CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN secrets; set them or disable fast mode.',
+		);
+	}
+	const client = new Cloudflare({ apiToken });
+	const html = await client.browserRendering.content.create({
+		account_id: accountId,
+		url: request.url,
+	});
+	return {
+		html,
+		finalUrl: request.url,
+		contentType: 'text/html',
 	};
 }
 
