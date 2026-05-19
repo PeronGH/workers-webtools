@@ -81,7 +81,7 @@ export async function fetchFastHtml({ env }: WorkerCtx, request: PageRequest): P
 	const html = await client.browserRendering.content.create({
 		account_id: accountId,
 		url: request.url,
-		gotoOptions: { waitUntil: 'networkidle2' },
+		gotoOptions: { waitUntil: 'domcontentloaded' },
 		rejectResourceTypes: ['image', 'media', 'font', 'texttrack', 'prefetch'],
 	});
 	return {
