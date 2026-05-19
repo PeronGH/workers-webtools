@@ -14,11 +14,11 @@ export class CloakBrowser extends Container {
 type Routes = {
 	'/fetch': {
 		req: { url: string };
-		res: { html: string; finalUrl: string; contentType: string };
+		res: { html: string; finalUrl: string };
 	};
 	'/snapshot': {
 		req: { url: string };
-		res: { html: string; screenshotBase64: string; finalUrl: string; contentType: string };
+		res: { html: string; screenshotBase64: string; finalUrl: string };
 	};
 };
 
@@ -46,7 +46,6 @@ export async function fetchHtml({ env }: WorkerCtx, request: PageRequest): Promi
 	return {
 		html: data.html,
 		finalUrl: data.finalUrl || request.url,
-		contentType: data.contentType || undefined,
 	};
 }
 
@@ -56,6 +55,5 @@ export async function fetchSnapshotData({ env }: WorkerCtx, request: PageRequest
 		html: data.html,
 		png: decodeBase64(data.screenshotBase64),
 		finalUrl: data.finalUrl || request.url,
-		contentType: data.contentType || undefined,
 	};
 }

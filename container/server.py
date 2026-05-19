@@ -2,8 +2,8 @@
 
 Exposes two endpoints backed by a single shared CloakBrowser:
 
-    POST /fetch     body {"url"}  -> JSON {html, finalUrl, contentType}
-    POST /snapshot  body {"url"}  -> JSON {html, screenshotBase64, finalUrl, contentType}
+    POST /fetch     body {"url"}  -> JSON {html, finalUrl}
+    POST /snapshot  body {"url"}  -> JSON {html, screenshotBase64, finalUrl}
 
 Each request runs in its own browser.new_context() so cookies / storage are
 isolated. The browser itself is launched once on startup; recovery from a
@@ -93,14 +93,10 @@ async def _settle(page, url: str) -> None:
         log.info("site handler error: %s", exc)
 
 
-async def _capture(page) -> tuple[str, str, str]:
+async def _capture(page) -> tuple[str, str]:
     final_url = page.url
-    try:
-        content_type = await page.evaluate("document.contentType")
-    except Exception:
-        content_type = ""
     html = await page.content()
-    return html, final_url, content_type or ""
+    return html, final_url
 
 
 def _require_url(data: dict) -> str:
@@ -117,12 +113,10 @@ async def handle_fetch(request: web.Request) -> web.Response:
     try:
         page = await context.new_page()
         await _settle(page, url)
-        html, final_url, content_type = await _capture(page)
+        html, final_url = await _capture(page)
     finally:
         await context.close()
-    return web.json_response(
-        {"html": html, "finalUrl": final_url, "contentType": content_type}
-    )
+    return web.json_response({"html": html, "finalUrl": final_url})
 
 
 async def handle_snapshot(request: web.Request) -> web.Response:
@@ -134,7 +128,7 @@ async def handle_snapshot(request: web.Request) -> web.Response:
         page = await context.new_page()
         await _settle(page, url)
         png = await page.screenshot(full_page=True, type="png")
-        html, final_url, content_type = await _capture(page)
+        html, final_url = await _capture(page)
     finally:
         await context.close()
     return web.json_response(
@@ -142,7 +136,6 @@ async def handle_snapshot(request: web.Request) -> web.Response:
             "html": html,
             "screenshotBase64": base64.b64encode(png).decode("ascii"),
             "finalUrl": final_url,
-            "contentType": content_type,
         }
     )
 

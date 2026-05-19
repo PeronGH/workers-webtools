@@ -17,6 +17,5 @@ export async function fetchFastHtml({ env }: WorkerCtx, request: PageRequest): P
 	return {
 		html,
 		finalUrl: request.url,
-		contentType: 'text/html',
 	};
 }
