@@ -1,5 +1,4 @@
-import { Defuddle } from 'defuddle/node';
-import { parseHTML } from 'linkedom';
+import { extractPage } from '../extract/defuddle';
 import { toMarkdown } from '../extract/markdown';
 import { fetchHtml } from '../render/container';
 import { fetchDirect } from '../render/direct';
@@ -23,8 +22,7 @@ export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Pr
 	}
 
 	const page = first.result;
-	const { document } = parseHTML(page.html);
-	const defuddle = await Defuddle(document, page.finalUrl, { includeReplies: true });
+	const defuddle = await extractPage(page);
 	if (defuddle.wordCount > 0) {
 		return toMarkdown(page, defuddle, worker.env);
 	}
@@ -34,8 +32,7 @@ export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Pr
 }
 
 async function renderPage(page: FetchedHtml, env: Env): Promise<string> {
-	const { document } = parseHTML(page.html);
-	const defuddle = await Defuddle(document, page.finalUrl, { includeReplies: true });
+	const defuddle = await extractPage(page);
 	return toMarkdown(page, defuddle, env);
 }
 
