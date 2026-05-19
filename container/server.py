@@ -25,10 +25,6 @@ PORT = 8000
 NAV_TIMEOUT_MS = 10_000
 VIEWPORT = {"width": 1440, "height": 767}
 
-TRANSPARENT_PNG = base64.b64decode(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGNgAAAAAgABc3UBGAAAAABJRU5ErkJggg=="
-)
-
 EAGER_LAZY_JS = """
 (() => {
   class EagerIO {
@@ -61,16 +57,6 @@ EAGER_LAZY_JS = """
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("stealth-webtools")
-
-
-async def _block_text_resources(route) -> None:
-    rt = route.request.resource_type
-    if rt == "image":
-        await route.fulfill(status=200, content_type="image/png", body=TRANSPARENT_PNG)
-    elif rt in ("media", "font"):
-        await route.abort()
-    else:
-        await route.continue_()
 
 
 async def _wait_generic(page) -> None:
@@ -130,7 +116,6 @@ async def handle_fetch(request: web.Request) -> web.Response:
     browser = request.app["browser"]
     context = await browser.new_context(viewport=VIEWPORT)
     try:
-        await context.route("**/*", _block_text_resources)
         page = await context.new_page()
         await _settle(page, url)
         html, final_url, content_type = await _capture(page)
