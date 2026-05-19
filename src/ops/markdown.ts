@@ -1,22 +1,42 @@
 import { Defuddle } from 'defuddle/node';
 import { parseHTML } from 'linkedom';
 import { toMarkdown } from '../extract/markdown';
-import { extractPdfUrl, pdfToMarkdown } from '../extract/pdf';
 import { fetchHtml } from '../render/container';
+import { fetchDirect } from '../render/direct';
 import { fetchFastHtml } from '../render/fast';
-import { fetchPdf } from '../render/pdf';
 import type { FetchedHtml, PageRequest, WorkerCtx } from '../types';
 
 export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Promise<string> {
-	const page = await fetchPage(worker, request);
-	const { document } = parseHTML(page.html);
-	const pdfUrl = extractPdfUrl(document);
-	if (pdfUrl) {
-		const blob = await fetchPdf(pdfUrl);
-		return pdfToMarkdown(blob, worker.env);
+	const directPromise = fetchDirect(request.url, worker.env);
+	const pagePromise = fetchPage(worker, request);
+	directPromise.catch(() => {});
+	pagePromise.catch(() => {});
+
+	const first = await Promise.race([
+		directPromise.then((result) => ({ src: 'direct' as const, result })),
+		pagePromise.then((result) => ({ src: 'page' as const, result })),
+	]);
+
+	if (first.src === 'direct') {
+		if (first.result) return first.result;
+		return renderPage(await pagePromise, worker.env);
 	}
+
+	const page = first.result;
+	const { document } = parseHTML(page.html);
 	const defuddle = await Defuddle(document, page.finalUrl, { includeReplies: true });
+	if (defuddle.wordCount > 0) {
+		return toMarkdown(page, defuddle, worker.env);
+	}
+	const direct = await directPromise;
+	if (direct) return direct;
 	return toMarkdown(page, defuddle, worker.env);
+}
+
+async function renderPage(page: FetchedHtml, env: Env): Promise<string> {
+	const { document } = parseHTML(page.html);
+	const defuddle = await Defuddle(document, page.finalUrl, { includeReplies: true });
+	return toMarkdown(page, defuddle, env);
 }
 
 async function fetchPage(worker: WorkerCtx, request: PageRequest): Promise<FetchedHtml> {
