@@ -1,31 +1,27 @@
 import type { PageRequest } from './browser';
 
 type UrlMatcher = (url: URL) => boolean;
-type UrlRewrite = (url: URL) => string;
+type UrlRewrite = (url: URL) => void;
 
 export const URL_REWRITES: readonly (readonly [UrlMatcher, UrlRewrite])[] = [
 	[
 		(url) => url.hostname === 'developers.cloudflare.com' && url.pathname.endsWith('/'),
-		(url) => {
-			const rewritten = new URL(url);
-			rewritten.pathname = `${url.pathname}index.md`;
-			return rewritten.toString();
-		},
+		(url) => (url.pathname = `${url.pathname}index.md`),
 	],
 	[
 		(url) => ['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'].includes(url.hostname),
-		(url) => {
-			const rewritten = new URL(url);
-			rewritten.hostname = 'nitter.tiekoetter.com';
-			return rewritten.toString();
-		},
+		(url) => (url.hostname = 'nitter.tiekoetter.com'),
 	],
 ];
 
 export function rewriteUrl(url: string): string {
 	const parsed = new URL(url);
 	for (const [matches, rewrite] of URL_REWRITES) {
-		if (matches(parsed)) return rewrite(parsed);
+		if (matches(parsed)) {
+			const rewritten = new URL(parsed);
+			rewrite(rewritten);
+			return rewritten.toString();
+		}
 	}
 	return url;
 }
