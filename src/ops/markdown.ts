@@ -15,6 +15,7 @@ async function loadExtraction(worker: WorkerCtx, request: PageRequest) {
 			const page = await fetchFastHtml(worker, request);
 			const defuddle = await extractPage(page);
 			if (!isResponseBlocked(defuddle)) return { page, defuddle };
+			console.log(`fast path blocked, retrying via container: ${request.url}`);
 		} catch {
 			// fast renderer threw — fall through to container
 		}
