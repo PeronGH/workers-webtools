@@ -8,9 +8,6 @@ export async function fetchDirect(url: string, env: Env): Promise<string | null>
 	if (contentType.startsWith('application/pdf') || contentType.startsWith('image/')) {
 		return aiToMarkdown(url, response, contentType, env);
 	}
-	if (contentType.startsWith('text/markdown') || contentType.startsWith('text/plain')) {
-		return response.text();
-	}
 	response.body?.cancel().catch(() => {});
 	return null;
 }
