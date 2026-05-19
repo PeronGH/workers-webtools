@@ -7,7 +7,7 @@ import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
 import { fetchSnapshot } from './fetchSnapshot';
 import { search } from './search';
-import { rewritePageRequest } from './urlRewrite';
+import { rewritePageRequest } from './pageRewrite';
 
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({

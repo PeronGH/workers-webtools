@@ -7,7 +7,7 @@ import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
 import { WebToolsMCP } from './mcp';
 import { search } from './search';
-import { rewritePageRequest } from './urlRewrite';
+import { rewritePageRequest } from './pageRewrite';
 
 export { CloakBrowser, WebToolsMCP };
 

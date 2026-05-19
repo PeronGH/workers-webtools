@@ -3,6 +3,8 @@ import type { PageRequest } from './pageTypes';
 type UrlMatcher = (url: URL) => boolean;
 type UrlRewrite = (url: URL) => void;
 
+export const FAST_DISABLED_HOSTS = new Set(['github.com', 'developer.apple.com']);
+
 export const URL_REWRITES: readonly (readonly [UrlMatcher, UrlRewrite])[] = [
 	[
 		(url) => url.hostname === 'developers.cloudflare.com' && url.pathname.endsWith('/'),
@@ -28,5 +30,7 @@ export function rewriteUrl(url: string): string {
 
 export function rewritePageRequest(request: PageRequest): PageRequest {
 	const url = rewriteUrl(request.url);
-	return url === request.url ? request : { ...request, url };
+	const fastDisabled = FAST_DISABLED_HOSTS.has(new URL(url).hostname.toLowerCase());
+	if (url === request.url && !fastDisabled) return request;
+	return fastDisabled ? { ...request, url, fast: false } : { ...request, url };
 }
