@@ -83,6 +83,7 @@ export async function fetchFastHtml({ env }: WorkerCtx, request: PageRequest): P
 	const html = await client.browserRendering.content.create({
 		account_id: accountId,
 		url: request.url,
+		rejectResourceTypes: ['image', 'media', 'font'],
 	});
 	return {
 		html,
