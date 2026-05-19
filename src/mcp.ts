@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
 import { Buffer } from 'node:buffer';
 import { z } from 'zod';
-import { askAboutContent } from './askAboutContent';
+import { askAboutPage } from './askAboutContent';
 import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
 import { fetchSnapshot } from './fetchSnapshot';
@@ -22,7 +22,6 @@ export class WebToolsMCP extends McpAgent<Env> {
 			{
 				description:
 					'Fetch a webpage and return its rendered Markdown. ' +
-					'Fast mode uses Cloudflare Browser Run Quick Actions by default; pass fast: false to use the stealth browser. ' +
 					'Output can be very long. ' +
 					'Cannot handle PDFs or other binary content.',
 				inputSchema: {
@@ -77,7 +76,6 @@ export class WebToolsMCP extends McpAgent<Env> {
 			{
 				description:
 					'Run `fetch` on the URL under the hood, then have an LLM respond to your prompt about its content. ' +
-					'Uses the stealth browser fetch path. ' +
 					'Slow due to the LLM round trip; ' +
 					'use when you want a focused answer instead of the raw page Markdown.',
 				inputSchema: {
@@ -86,9 +84,8 @@ export class WebToolsMCP extends McpAgent<Env> {
 				},
 			},
 			async ({ url, prompt }) => {
-				const request = rewritePageRequest({ url, fast: false });
-				const markdown = await fetchMarkdown({ env: this.env }, request);
-				const answer = await askAboutContent(markdown, request.url, prompt, this.env);
+				const request = rewritePageRequest({ url });
+				const answer = await askAboutPage({ env: this.env }, request, prompt);
 				return { content: [{ type: 'text', text: answer }] };
 			},
 		);

@@ -1,6 +1,15 @@
+import { fetchMarkdown } from './fetchMarkdown';
+import type { PageRequest, WorkerCtx } from './page';
+
 const MODEL = '@cf/moonshotai/kimi-k2.6';
 
-export async function askAboutContent(content: string, url: string, prompt: string, env: Env): Promise<string> {
+export async function askAboutPage(worker: WorkerCtx, request: PageRequest, prompt: string): Promise<string> {
+	const stealthRequest = { ...request, fast: false };
+	const markdown = await fetchMarkdown(worker, stealthRequest);
+	return askAboutContent(markdown, stealthRequest.url, prompt, worker.env);
+}
+
+async function askAboutContent(content: string, url: string, prompt: string, env: Env): Promise<string> {
 	const response = await env.AI.run(MODEL, {
 		messages: [
 			{

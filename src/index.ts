@@ -1,7 +1,7 @@
 import { getContainer } from '@cloudflare/containers';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { askAboutContent } from './askAboutContent';
+import { askAboutPage } from './askAboutContent';
 import { CloakBrowser } from './browser';
 import { fetchMarkdown } from './fetchMarkdown';
 import { fetchScreenshot } from './fetchScreenshot';
@@ -43,10 +43,9 @@ app.get('/fetch/*', async (c) => {
 app.post('/ask/*', async (c) => {
 	const target = extractTarget(c, '/ask/');
 	const prompt = await c.req.text();
-	const request = rewritePageRequest({ url: target, fast: false });
+	const request = rewritePageRequest({ url: target });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
-	const markdown = await fetchMarkdown(worker, request);
-	const answer = await askAboutContent(markdown, request.url, prompt, c.env);
+	const answer = await askAboutPage(worker, request, prompt);
 	return c.body(answer, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
 });
 
