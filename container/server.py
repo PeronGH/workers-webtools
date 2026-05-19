@@ -147,8 +147,11 @@ async def handle_snapshot(request: web.Request) -> web.Response:
     )
 
 
-async def handle_health(_: web.Request) -> web.Response:
-    return web.json_response({"ok": True})
+async def handle_health(request: web.Request) -> web.Response:
+    browser = request.app.get("browser")
+    connected = bool(browser is not None and browser.is_connected())
+    status = 200 if connected else 503
+    return web.json_response({"ok": connected}, status=status)
 
 
 async def _launch_browser():
@@ -160,12 +163,17 @@ async def _restart_browser(app: web.Application) -> None:
         browser = app.get("browser")
         if browser is not None and browser.is_connected():
             return
+        log.warning("CloakBrowser restart starting")
         if browser is not None:
             try:
                 await browser.close()
-            except Exception:
-                pass
-        app["browser"] = await _launch_browser()
+            except Exception as exc:
+                log.warning("failed to close disconnected CloakBrowser: %s", exc)
+        try:
+            app["browser"] = await _launch_browser()
+        except Exception:
+            log.exception("CloakBrowser restart failed")
+            return
         log.info("CloakBrowser restarted")
 
 
