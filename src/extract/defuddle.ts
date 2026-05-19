@@ -12,6 +12,7 @@ export async function extractPage(page: FetchedHtml): Promise<DefuddleResponse> 
 export function isCloudflareChallenge(defuddle: DefuddleResponse): boolean {
 	return (
 		defuddle.title === 'Just a moment...' ||
+		defuddle.title === 'Attention Required!' ||
 		defuddle.site === 'Cloudflare' ||
 		defuddle.content.trim() === ''
 	);
