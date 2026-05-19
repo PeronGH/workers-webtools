@@ -9,7 +9,10 @@ export const URL_REWRITES: readonly (readonly [UrlMatcher, UrlRewrite])[] = [
 		(url) => (url.pathname = `${url.pathname}index.md`),
 	],
 	[
-		(url) => url.hostname === 'developer.apple.com' && url.pathname.startsWith('/documentation/') && !url.pathname.endsWith('/'),
+		(url) =>
+			url.hostname === 'developer.apple.com' &&
+			url.pathname.startsWith('/documentation/') &&
+			!(url.pathname.endsWith('/') || url.pathname.endsWith('.md')),
 		(url) => (url.pathname = `/tutorials/data${url.pathname}.md`),
 	],
 	[
