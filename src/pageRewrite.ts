@@ -1,4 +1,5 @@
 import type { PageRequest } from './pageTypes';
+import { removeSuffix } from './utils';
 
 type UrlMatcher = (url: URL) => boolean;
 type UrlRewrite = (url: URL) => void;
@@ -9,11 +10,8 @@ export const URL_REWRITES: readonly (readonly [UrlMatcher, UrlRewrite])[] = [
 		(url) => (url.pathname = `${url.pathname}index.md`),
 	],
 	[
-		(url) =>
-			url.hostname === 'developer.apple.com' &&
-			url.pathname.startsWith('/documentation/') &&
-			!(url.pathname.endsWith('/') || url.pathname.endsWith('.md')),
-		(url) => (url.pathname = `/tutorials/data${url.pathname}.md`),
+		(url) => url.hostname === 'developer.apple.com' && url.pathname.startsWith('/documentation/') && !url.pathname.endsWith('.md'),
+		(url) => (url.pathname = `/tutorials/data${removeSuffix(url.pathname, '/')}.md`),
 	],
 	[
 		(url) => ['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'].includes(url.hostname),
