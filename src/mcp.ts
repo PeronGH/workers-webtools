@@ -12,7 +12,7 @@ import { rewritePageRequest } from './urlRewrite';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.3.0',
+		version: '0.4.0',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -26,7 +26,12 @@ export class WebToolsMCP extends McpAgent<Env> {
 					'Cannot handle PDFs or other binary content.',
 				inputSchema: {
 					url: z.url(),
-					fast: z.boolean().default(true),
+					fast: z
+						.boolean()
+						.default(true)
+						.describe(
+							'Use the faster fetch path. Leave enabled unless the page needs full SPA rendering or stronger anti-bot handling.',
+						),
 				},
 			},
 			async ({ url, fast }) => {
