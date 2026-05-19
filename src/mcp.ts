@@ -21,16 +21,13 @@ export class WebToolsMCP extends McpAgent<Env> {
 			'fetch',
 			{
 				description:
-					'Fetch a webpage and return its rendered Markdown. ' +
+					'Fetch a webpage as Markdown. ' +
 					'Output can be very long. ' +
-					'You should retry with fast=false if the result seems incomplete or blocked. ' +
+					'You should ALWAYS retry with fast=false if the result seems incomplete or blocked. ' +
 					'Cannot handle PDFs or other binary content.',
 				inputSchema: {
 					url: z.url(),
-					fast: z
-						.boolean()
-						.default(true)
-						.describe('Use the faster fetch path. Leave enabled unless the page needs full SPA rendering or stronger anti-bot handling.'),
+					fast: z.boolean().default(true).describe('Initial HTML only. Disable for SPAs or anti-bot pages.'),
 				},
 			},
 			async ({ url, fast }) => {
