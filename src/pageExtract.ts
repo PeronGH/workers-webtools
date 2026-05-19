@@ -1,5 +1,6 @@
-import { Defuddle } from 'defuddle/node';
+import { Defuddle, type DefuddleResponse } from 'defuddle/node';
 import { parseHTML } from 'linkedom';
+import type { FetchedHtml } from './pageTypes';
 
 const REDDIT_LISTING = /^\/(r|u|user)\/[^/]+(\/[^/]+)?\/?$/;
 const SE_QUESTION = /^\/questions\/\d+(\/|$)/;
@@ -18,26 +19,37 @@ function isStackExchange(hostname: string): boolean {
 	return STACKEXCHANGE_HOSTS.has(hostname) || hostname.endsWith('.stackexchange.com');
 }
 
-/** Hosts/paths where Defuddle's extractor mangles the structure. */
-function shouldDefuddle(url: URL): boolean {
+/** Hosts/paths where Defuddle's extractor mangles the structure — we still run
+ *  Defuddle on these for challenge detection, but discard its extracted content. */
+function shouldUseDefuddleContent(url: URL): boolean {
 	if (/(^|\.)reddit\.com$/.test(url.hostname) && REDDIT_LISTING.test(url.pathname)) return false;
 	if (isStackExchange(url.hostname) && SE_QUESTION.test(url.pathname)) return false;
 	return true;
 }
 
+/** Parse the fetched HTML through Defuddle for metadata and cleaned content. */
+export async function extractPage(page: FetchedHtml): Promise<DefuddleResponse> {
+	const { document } = parseHTML(page.html);
+	return Defuddle(document, page.finalUrl, { includeReplies: true });
+}
+
+/** Classify a Defuddle result as a Cloudflare interstitial / challenge page. */
+export function isCloudflareChallenge(defuddle: DefuddleResponse): boolean {
+	return (
+		defuddle.title === 'Just a moment...' ||
+		defuddle.site === 'Cloudflare' ||
+		defuddle.content.trim() === ''
+	);
+}
+
 /**
- * Convert a settled page (HTML + final URL + originating Content-Type) into
- * Markdown. Defuddle removes boilerplate; env.AI.toMarkdown does the
- * HTML → Markdown step because Defuddle's bundled turndown converter needs
- * DOMParser, which isn't in the Workers runtime.
+ * Convert a settled page into Markdown. Uses Defuddle's cleaned content on
+ * hosts where it improves the result; otherwise feeds the raw HTML to
+ * env.AI.toMarkdown (Defuddle's bundled turndown needs DOMParser, which the
+ * Workers runtime lacks).
  */
-export async function extractMarkdown(
-	html: string,
-	finalUrl: string,
-	contentType: string | undefined,
-	env: Env,
-): Promise<string> {
-	const ct = contentType?.split(';')[0]?.trim().toLowerCase();
+export async function toMarkdown(page: FetchedHtml, defuddle: DefuddleResponse, env: Env): Promise<string> {
+	const ct = page.contentType?.split(';')[0]?.trim().toLowerCase();
 	const isConvertible =
 		ct === undefined ||
 		ct === '' ||
@@ -48,21 +60,19 @@ export async function extractMarkdown(
 		ct.endsWith('+json') ||
 		ct.endsWith('+xml');
 	if (!isConvertible) {
-		return `Cannot convert ${contentType} resource to Markdown. Source: ${finalUrl}`;
+		return `Cannot convert ${page.contentType} resource to Markdown. Source: ${page.finalUrl}`;
 	}
-	const pageUrl = new URL(finalUrl);
-	let contentHtml = html;
-	const meta: Record<string, string | undefined> = { url: finalUrl };
-	if (shouldDefuddle(pageUrl)) {
-		const { document } = parseHTML(html);
-		const extracted = await Defuddle(document, finalUrl, { includeReplies: true });
-		contentHtml = extracted.content;
-		meta.title = extracted.title;
-		meta.description = extracted.description;
-		meta.author = extracted.author;
-		meta.site = extracted.site;
-		meta.published = extracted.published;
-		meta.image = extracted.image;
+	const pageUrl = new URL(page.finalUrl);
+	let contentHtml = page.html;
+	const meta: Record<string, string | undefined> = { url: page.finalUrl };
+	if (shouldUseDefuddleContent(pageUrl)) {
+		contentHtml = defuddle.content;
+		meta.title = defuddle.title;
+		meta.description = defuddle.description;
+		meta.author = defuddle.author;
+		meta.site = defuddle.site;
+		meta.published = defuddle.published;
+		meta.image = defuddle.image;
 	}
 	const result = await env.AI.toMarkdown(
 		{ name: 'page.html', blob: new Blob([contentHtml], { type: 'text/html' }) },
