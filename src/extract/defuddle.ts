@@ -13,7 +13,8 @@ export function isResponseBlocked(defuddle: DefuddleResponse): boolean {
 	return (
 		defuddle.title === 'Just a moment...' ||
 		defuddle.title === 'Attention Required!' ||
+		defuddle.title.toLowerCase().includes('captcha') ||
 		defuddle.site === 'Cloudflare' ||
-		defuddle.content.trim() === ''
+		defuddle.wordCount === 0
 	);
 }
