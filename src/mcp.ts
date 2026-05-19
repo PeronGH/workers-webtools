@@ -12,7 +12,7 @@ import { rewritePageRequest } from './pageRewrite';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.4.1',
+		version: '0.4.2',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -23,7 +23,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				description:
 					'Fetch a webpage and return its rendered Markdown. ' +
 					'Output can be very long. ' +
-					'You should retry with fast=false if the result seems incomplete. ' +
+					'You should retry with fast=false if the result seems incomplete or blocked. ' +
 					'Cannot handle PDFs or other binary content.',
 				inputSchema: {
 					url: z.url(),
