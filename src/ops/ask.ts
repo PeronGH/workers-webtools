@@ -4,7 +4,7 @@ import { fetchMarkdown } from './markdown';
 const MODEL = '@cf/moonshotai/kimi-k2.6';
 
 export async function askAboutPage(worker: WorkerCtx, request: PageRequest, prompt: string): Promise<string> {
-	const fetchRequest = { ...request, fast: false, full: true };
+	const fetchRequest = { ...request, stealth: true, full: true, waitUntil: 'networkidle' as const };
 	const content = await fetchMarkdown(worker, fetchRequest);
 	const response = await worker.env.AI.run(MODEL, {
 		messages: [

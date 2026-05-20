@@ -8,6 +8,14 @@ import { fetchScreenshot } from './ops/screenshot';
 import { search } from './ops/search';
 import { CloakBrowser } from './render/container';
 import { rewritePageRequest } from './rewrite';
+import type { WaitUntil } from './types';
+
+const WAIT_UNTIL_VALUES: WaitUntil[] = ['domcontentloaded', 'networkidle', '15s'];
+
+function parseWaitUntil(header: string | undefined): WaitUntil {
+	const v = header?.trim() as WaitUntil | undefined;
+	return v && WAIT_UNTIL_VALUES.includes(v) ? v : 'domcontentloaded';
+}
 
 export { CloakBrowser, WebToolsMCP };
 
@@ -36,8 +44,9 @@ app.get('/fetch/*', async (c) => {
 	const target = extractTarget(c, '/fetch/');
 	const request = rewritePageRequest({
 		url: target,
-		fast: c.req.header('x-fast-mode')?.trim() !== '0',
+		stealth: !!c.req.header('x-stealth')?.trim(),
 		full: c.req.header('x-full')?.trim() === '1',
+		waitUntil: parseWaitUntil(c.req.header('x-wait-until')),
 	});
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
 	const markdown = await fetchMarkdown(worker, request);
@@ -47,7 +56,7 @@ app.get('/fetch/*', async (c) => {
 app.post('/ask/*', async (c) => {
 	const target = extractTarget(c, '/ask/');
 	const prompt = await c.req.text();
-	const request = rewritePageRequest({ url: target, fast: false, full: true });
+	const request = rewritePageRequest({ url: target, stealth: true, full: true, waitUntil: 'networkidle' });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
 	const answer = await askAboutPage(worker, request, prompt);
 	return c.body(answer, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
@@ -55,7 +64,7 @@ app.post('/ask/*', async (c) => {
 
 app.get('/screenshot/*', async (c) => {
 	const target = extractTarget(c, '/screenshot/');
-	const request = rewritePageRequest({ url: target, fast: false, full: true });
+	const request = rewritePageRequest({ url: target, stealth: true, full: true, waitUntil: 'networkidle' });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
 	const png = await fetchScreenshot(worker, request);
 	return c.body(png as Uint8Array<ArrayBuffer>, 200, { 'Content-Type': 'image/png' });

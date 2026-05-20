@@ -21,17 +21,21 @@ export class WebToolsMCP extends McpAgent<Env> {
 			'fetch',
 			{
 				description:
-					'Fetch a URL as Markdown. Handles webpages, images, and rich documents (PDFs, Office docs). ' +
+					'Fetch a URL as Markdown. Handles webpages and rich documents (PDFs, Office docs). ' +
 					'Output can be very long. ' +
-					'You should ALWAYS retry with fast=false for SPA or anti-bot pages, and with full=true for incomplete or empty pages.',
+					"You should ALWAYS retry with stealth=true for anti-bot pages, waitUntil='networkidle' or '15s' for SPAs, and full=true for incomplete or empty pages.",
 				inputSchema: {
 					url: z.url(),
-					fast: z.boolean().default(true).describe('Initial HTML only. Disable for SPAs or anti-bot pages.'),
+					stealth: z.boolean().default(false).describe('Route through the stealth container instead of Cloudflare Browser Rendering.'),
 					full: z.boolean().default(false).describe('Skip Defuddle content trimming and return the raw page conversion.'),
+					waitUntil: z
+						.enum(['domcontentloaded', 'networkidle', '15s'])
+						.default('domcontentloaded')
+						.describe("Navigation wait strategy. '15s' waits for domcontentloaded then sleeps 15s for stubborn SPAs."),
 				},
 			},
-			async ({ url, fast, full }) => {
-				const request = rewritePageRequest({ url, fast, full });
+			async ({ url, stealth, full, waitUntil }) => {
+				const request = rewritePageRequest({ url, stealth, full, waitUntil });
 				const markdown = await fetchMarkdown({ env: this.env }, request);
 				return { content: [{ type: 'text', text: markdown }] };
 			},
@@ -47,7 +51,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
-				const request = rewritePageRequest({ url, fast: false, full: true });
+				const request = rewritePageRequest({ url, stealth: true, full: true, waitUntil: 'networkidle' });
 				const png = await fetchScreenshot({ env: this.env }, request);
 				const data = Buffer.from(png).toString('base64');
 				return { content: [{ type: 'image', data, mimeType: 'image/png' }] };
@@ -61,7 +65,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
-				const request = rewritePageRequest({ url, fast: false, full: true });
+				const request = rewritePageRequest({ url, stealth: true, full: true, waitUntil: 'networkidle' });
 				const { markdown, png } = await fetchSnapshot({ env: this.env }, request);
 				return {
 					content: [
@@ -85,7 +89,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				},
 			},
 			async ({ url, prompt }) => {
-				const request = rewritePageRequest({ url, fast: false, full: true });
+				const request = rewritePageRequest({ url, stealth: true, full: true, waitUntil: 'networkidle' });
 				const answer = await askAboutPage({ env: this.env }, request, prompt);
 				return { content: [{ type: 'text', text: answer }] };
 			},

@@ -2,12 +2,14 @@
 
 Exposes two endpoints backed by a single shared CloakBrowser:
 
-    POST /fetch     body {"url"}  -> JSON {html, finalUrl}
-    POST /snapshot  body {"url"}  -> JSON {html, screenshotBase64, finalUrl}
+    POST /fetch     body {"url", "waitUntil", "waitForTimeoutMs"} -> JSON {html, finalUrl}
+    POST /snapshot  body {"url", "waitUntil", "waitForTimeoutMs"} -> JSON {html, screenshotBase64, finalUrl}
 
-Each request runs in its own browser.new_context() so cookies / storage are
-isolated. The browser itself is launched once on startup; recovery from a
-crashed browser is handled by the Worker calling Container.destroy().
+`waitUntil` accepts "domcontentloaded" (default) or "networkidle"; `waitForTimeoutMs`
+is an optional post-navigation sleep (default 0). Each request runs in its own
+browser.new_context() so cookies / storage are isolated. The browser itself is
+launched once on startup; recovery from a crashed browser is handled by the
+Worker calling Container.destroy().
 """
 
 from __future__ import annotations
@@ -21,8 +23,10 @@ from aiohttp import web
 from cloakbrowser import launch_async
 
 PORT = 8000
-NAV_TIMEOUT_MS = 10_000
+NAV_TIMEOUT_MS = 15_000
 VIEWPORT = {"width": 1440, "height": 767}
+
+VALID_WAIT_UNTIL = ("domcontentloaded", "networkidle")
 
 EAGER_LAZY_JS = """
 (() => {
@@ -62,7 +66,6 @@ async def _wait_generic(page) -> None:
     await page.wait_for_selector(
         "#anubis_challenge", state="detached", timeout=NAV_TIMEOUT_MS
     )
-    await page.wait_for_load_state("networkidle", timeout=NAV_TIMEOUT_MS)
 
 
 async def _wait_brave(page) -> None:
@@ -81,9 +84,9 @@ SITE_HANDLERS = {
 }
 
 
-async def _settle(page, url: str) -> None:
+async def _settle(page, url: str, wait_until: str, wait_for_timeout_ms: int) -> None:
     try:
-        await page.goto(url, wait_until="domcontentloaded", timeout=NAV_TIMEOUT_MS)
+        await page.goto(url, wait_until=wait_until, timeout=NAV_TIMEOUT_MS)
     except Exception as exc:
         log.info("goto error: %s", exc)
     host = urlparse(url).hostname or ""
@@ -91,6 +94,8 @@ async def _settle(page, url: str) -> None:
         await SITE_HANDLERS.get(host, _wait_generic)(page)
     except Exception as exc:
         log.info("site handler error: %s", exc)
+    if wait_for_timeout_ms > 0:
+        await asyncio.sleep(wait_for_timeout_ms / 1000)
 
 
 async def _capture(page) -> tuple[str, str]:
@@ -99,20 +104,28 @@ async def _capture(page) -> tuple[str, str]:
     return html, final_url
 
 
-def _require_url(data: dict) -> str:
+def _require_request_body(data: dict) -> tuple[str, str, int]:
     url = data.get("url")
     if not isinstance(url, str) or not url.startswith(("http://", "https://")):
         raise web.HTTPBadRequest(reason="`url` must be http(s)")
-    return url
+    wait_until = data.get("waitUntil", "domcontentloaded")
+    if wait_until not in VALID_WAIT_UNTIL:
+        raise web.HTTPBadRequest(
+            reason=f"`waitUntil` must be one of {VALID_WAIT_UNTIL}"
+        )
+    wait_for_timeout_ms = data.get("waitForTimeoutMs", 0)
+    if not isinstance(wait_for_timeout_ms, int) or wait_for_timeout_ms < 0:
+        raise web.HTTPBadRequest(reason="`waitForTimeoutMs` must be a non-negative int")
+    return url, wait_until, wait_for_timeout_ms
 
 
 async def handle_fetch(request: web.Request) -> web.Response:
-    url = _require_url(await request.json())
+    url, wait_until, wait_for_timeout_ms = _require_request_body(await request.json())
     browser = request.app["browser"]
     context = await browser.new_context(viewport=VIEWPORT)
     try:
         page = await context.new_page()
-        await _settle(page, url)
+        await _settle(page, url, wait_until, wait_for_timeout_ms)
         html, final_url = await _capture(page)
     finally:
         await context.close()
@@ -120,13 +133,13 @@ async def handle_fetch(request: web.Request) -> web.Response:
 
 
 async def handle_snapshot(request: web.Request) -> web.Response:
-    url = _require_url(await request.json())
+    url, wait_until, wait_for_timeout_ms = _require_request_body(await request.json())
     browser = request.app["browser"]
     context = await browser.new_context(viewport=VIEWPORT)
     try:
         await context.add_init_script(EAGER_LAZY_JS)
         page = await context.new_page()
-        await _settle(page, url)
+        await _settle(page, url, wait_until, wait_for_timeout_ms)
         png = await page.screenshot(full_page=True, type="png")
         html, final_url = await _capture(page)
     finally:

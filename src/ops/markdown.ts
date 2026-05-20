@@ -1,9 +1,9 @@
 import { extractPage } from '../extract/defuddle';
 import { toMarkdown } from '../extract/markdown';
-import { fetchHtml } from '../render/container';
+import { fetchHtml } from '../render/cloudflare';
+import { stealthFetchHtml } from '../render/container';
 import { fetchDirect } from '../render/direct';
-import { fetchFastHtml } from '../render/fast';
-import type { FetchedHtml, PageRequest, WorkerCtx } from '../types';
+import type { FetchOptions, FetchedHtml, PageRequest, WorkerCtx } from '../types';
 
 export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Promise<string> {
 	const directPromise = fetchDirect(request.url, worker.env);
@@ -33,11 +33,11 @@ export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Pr
 	return toMarkdown(page, defuddle, { env: worker.env, full: request.full });
 }
 
-async function fetchPage(worker: WorkerCtx, request: PageRequest): Promise<FetchedHtml> {
-	if (!request.fast) return fetchHtml(worker, request);
+async function fetchPage(worker: WorkerCtx, request: FetchOptions): Promise<FetchedHtml> {
+	if (request.stealth) return stealthFetchHtml(worker, request);
 	try {
-		return await fetchFastHtml(worker, request);
+		return await fetchHtml(worker, request);
 	} catch {
-		return fetchHtml(worker, request);
+		return stealthFetchHtml(worker, request);
 	}
 }

@@ -1,5 +1,5 @@
 import { parseHTML } from 'linkedom';
-import { fetchFastHtml } from '../render/fast';
+import { fetchHtml } from '../render/cloudflare';
 import type { WorkerCtx } from '../types';
 
 export type SearchResult = {
@@ -27,7 +27,7 @@ export async function search(query: string, worker: WorkerCtx): Promise<SearchRe
 	});
 	const url = `https://search.brave.com/search?${params}`;
 
-	const { html } = await fetchFastHtml(worker, { url, fast: true, full: false });
+	const { html } = await fetchHtml(worker, { url, waitUntil: 'domcontentloaded' });
 	const { document } = parseHTML(html);
 	return Array.from(document.querySelectorAll('div.snippet[data-type="web"]'), (raw) => {
 		const item = raw as SearchEl;

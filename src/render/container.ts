@@ -1,5 +1,5 @@
 import { Container, getContainer } from '@cloudflare/containers';
-import type { FetchedHtml, PageRequest, SnapshotData, WorkerCtx } from '../types';
+import type { FetchedHtml, RenderOptions, SnapshotData, WaitUntil, WorkerCtx } from '../types';
 
 /** Single shared CloakBrowser instance. */
 export class CloakBrowser extends Container {
@@ -7,14 +7,18 @@ export class CloakBrowser extends Container {
 	sleepAfter = '1h';
 }
 
+type RpcWaitUntil = 'domcontentloaded' | 'networkidle';
+
+type RpcBody = { url: string; waitUntil: RpcWaitUntil; waitForTimeoutMs: number };
+
 /** Shapes must match container/server.py handlers. */
 type Routes = {
 	'/fetch': {
-		req: { url: string };
+		req: RpcBody;
 		res: { html: string; finalUrl: string };
 	};
 	'/snapshot': {
-		req: { url: string };
+		req: RpcBody;
 		res: { html: string; screenshotBase64: string; finalUrl: string };
 	};
 };
@@ -38,16 +42,26 @@ function decodeBase64(b64: string): Uint8Array {
 	return out;
 }
 
-export async function fetchHtml({ env }: WorkerCtx, request: PageRequest): Promise<FetchedHtml> {
-	const data = await rpc(env, '/fetch', { url: request.url });
+function rpcBody(request: RenderOptions): RpcBody {
+	return { url: request.url, ...waitOptions(request.waitUntil) };
+}
+
+function waitOptions(waitUntil: WaitUntil): { waitUntil: RpcWaitUntil; waitForTimeoutMs: number } {
+	if (waitUntil === 'networkidle') return { waitUntil: 'networkidle', waitForTimeoutMs: 0 };
+	if (waitUntil === '15s') return { waitUntil: 'domcontentloaded', waitForTimeoutMs: 15_000 };
+	return { waitUntil: 'domcontentloaded', waitForTimeoutMs: 0 };
+}
+
+export async function stealthFetchHtml({ env }: WorkerCtx, request: RenderOptions): Promise<FetchedHtml> {
+	const data = await rpc(env, '/fetch', rpcBody(request));
 	return {
 		html: data.html,
 		finalUrl: data.finalUrl || request.url,
 	};
 }
 
-export async function fetchSnapshotData({ env }: WorkerCtx, request: PageRequest): Promise<SnapshotData> {
-	const data = await rpc(env, '/snapshot', { url: request.url });
+export async function stealthFetchSnapshot({ env }: WorkerCtx, request: RenderOptions): Promise<SnapshotData> {
+	const data = await rpc(env, '/snapshot', rpcBody(request));
 	return {
 		html: data.html,
 		png: decodeBase64(data.screenshotBase64),
