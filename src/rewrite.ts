@@ -9,8 +9,10 @@ function removeSuffix(value: string, suffix: string): string {
 
 export const URL_REWRITES: readonly (readonly [UrlMatcher, UrlRewrite])[] = [
 	[
-		(url) => url.hostname === 'developers.cloudflare.com' && url.pathname.endsWith('/'),
-		(url) => (url.pathname = `${url.pathname}index.md`),
+		(url) => url.hostname === 'developers.cloudflare.com' && !/\.[a-z]+$/.test(url.pathname),
+		(url) => {
+			url.pathname = url.pathname.endsWith('/') ? `${url.pathname}index.md` : `${url.pathname}/index.md`;
+		},
 	],
 	[
 		(url) => url.hostname === 'developer.apple.com' && url.pathname.startsWith('/documentation/'),
