@@ -22,6 +22,7 @@ function isStackExchange(hostname: string): boolean {
 function defuddleManglesUrl(url: URL): boolean {
 	if (/(^|\.)reddit\.com$/.test(url.hostname) && REDDIT_LISTING.test(url.pathname)) return true;
 	if (isStackExchange(url.hostname) && SE_QUESTION.test(url.pathname)) return true;
+	if (url.hostname === 'xdaforums.com' && url.pathname.startsWith('/t/')) return true;
 	return false;
 }
 
