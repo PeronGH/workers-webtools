@@ -1,5 +1,5 @@
 export async function fetchDirect(url: string, env: Env): Promise<string | null> {
-	const response = await fetch(url).catch(() => null);
+	const response = await fetch(url, { headers: { 'user-agent': 'curl/8.7.1' } }).catch(() => null);
 	if (!response?.ok) {
 		response?.body?.cancel().catch(() => {});
 		return null;
