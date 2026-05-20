@@ -18,11 +18,11 @@ function isStackExchange(hostname: string): boolean {
 	return STACKEXCHANGE_HOSTS.has(hostname) || hostname.endsWith('.stackexchange.com');
 }
 
-/** Hosts and paths where Defuddle's extracted content should be discarded in favor of raw HTML. */
-function shouldUseDefuddleContent(url: URL): boolean {
-	if (/(^|\.)reddit\.com$/.test(url.hostname) && REDDIT_LISTING.test(url.pathname)) return false;
-	if (isStackExchange(url.hostname) && SE_QUESTION.test(url.pathname)) return false;
-	return true;
+/** Hosts and paths where Defuddle is known to mangle the extracted content. */
+function defuddleManglesUrl(url: URL): boolean {
+	if (/(^|\.)reddit\.com$/.test(url.hostname) && REDDIT_LISTING.test(url.pathname)) return true;
+	if (isStackExchange(url.hostname) && SE_QUESTION.test(url.pathname)) return true;
+	return false;
 }
 
 /** Convert a settled page into Markdown via env.AI.toMarkdown. */
@@ -30,7 +30,7 @@ export async function toMarkdown(page: FetchedHtml, defuddle: DefuddleResponse, 
 	const pageUrl = new URL(page.finalUrl);
 	let contentHtml = page.html;
 	const meta: Record<string, string | undefined> = { url: page.finalUrl };
-	if (defuddle.wordCount > 0 && shouldUseDefuddleContent(pageUrl)) {
+	if (defuddle.wordCount > 0 && !defuddleManglesUrl(pageUrl)) {
 		contentHtml = defuddle.content;
 		meta.title = defuddle.title;
 		meta.description = defuddle.description;
