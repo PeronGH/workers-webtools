@@ -13,7 +13,7 @@ import { rewritePageRequest } from './rewrite';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.7.0',
+		version: '0.7.1',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -24,7 +24,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				description:
 					'Fetch a URL as Markdown. Handles webpages and rich documents (PDFs, Office docs). ' +
 					'Output can be very long. ' +
-					"You should ALWAYS retry with stealth=true for anti-bot pages, waitUntil='networkidle' or 'settled' for SPAs, and raw=true for incomplete or empty pages.",
+					"You should ALWAYS retry `fetch` with stealth=true for anti-bot pages, waitUntil='networkidle' or 'settled' for SPAs, and raw=true for incomplete or empty pages.",
 				inputSchema: {
 					url: z.url(),
 					stealth: z.boolean().default(false).describe('Route through a stealth browser instead of Cloudflare Browser Run.'),
@@ -62,7 +62,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 		this.server.registerTool(
 			'snapshot',
 			{
-				description: 'Fetch a webpage as Markdown and PNG screenshot together.',
+				description: 'Run `fetch` and `screenshot` together.',
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
@@ -82,8 +82,8 @@ export class WebToolsMCP extends McpAgent<Env> {
 			{
 				description:
 					'Run `fetch` on the URL under the hood, then have an LLM respond to your prompt about its content. ' +
-					'Slow due to the LLM round trip; ' +
-					'use when you want a focused answer instead of the raw page Markdown.',
+					'Slow due to the LLM round trip. ' +
+					'Use when you want a focused answer.',
 				inputSchema: {
 					url: z.url(),
 					prompt: z.string(),
