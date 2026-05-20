@@ -29,17 +29,8 @@ function defuddleManglesUrl(url: URL): boolean {
 /** Convert a settled page into Markdown via env.AI.toMarkdown. */
 export async function toMarkdown(page: FetchedHtml, defuddle: DefuddleResponse, env: Env): Promise<string> {
 	const pageUrl = new URL(page.finalUrl);
-	let contentHtml = page.html;
-	const meta: Record<string, string | undefined> = { url: page.finalUrl };
-	if (defuddle.wordCount > 0 && !defuddleManglesUrl(pageUrl)) {
-		contentHtml = defuddle.content;
-		meta.title = defuddle.title;
-		meta.description = defuddle.description;
-		meta.author = defuddle.author;
-		meta.site = defuddle.site;
-		meta.published = defuddle.published;
-		meta.image = defuddle.image;
-	}
+	const useDefuddle = defuddle.wordCount > 0 && !defuddleManglesUrl(pageUrl);
+	const contentHtml = useDefuddle ? defuddle.content : page.html;
 	const result = await env.AI.toMarkdown(
 		{ name: 'page.html', blob: new Blob([contentHtml], { type: 'text/html' }) },
 		{ conversionOptions: { html: { hostname: pageUrl.origin } } },
@@ -47,7 +38,18 @@ export async function toMarkdown(page: FetchedHtml, defuddle: DefuddleResponse, 
 	if (result.format !== 'markdown') {
 		throw new Error(`Conversion failed: ${result.error ?? 'unknown error'}`);
 	}
-	return buildFrontMatter(meta) + result.data;
+	if (!useDefuddle) return result.data;
+	return (
+		buildFrontMatter({
+			url: page.finalUrl,
+			title: defuddle.title,
+			description: defuddle.description,
+			author: defuddle.author,
+			site: defuddle.site,
+			published: defuddle.published,
+			image: defuddle.image,
+		}) + result.data
+	);
 }
 
 function buildFrontMatter(fields: Record<string, string | undefined>): string {
