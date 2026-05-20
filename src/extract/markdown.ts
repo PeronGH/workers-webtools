@@ -36,7 +36,7 @@ export async function toMarkdown(page: FetchedHtml, defuddle: DefuddleResponse, 
 	const pageUrl = new URL(page.finalUrl);
 	let contentHtml = page.html;
 	const meta: Record<string, string | undefined> = { url: page.finalUrl };
-	if (shouldUseDefuddleContent(pageUrl)) {
+	if (defuddle.wordCount > 0 && shouldUseDefuddleContent(pageUrl)) {
 		contentHtml = defuddle.content;
 		meta.title = defuddle.title;
 		meta.description = defuddle.description;
