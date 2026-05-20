@@ -26,8 +26,8 @@ export class WebToolsMCP extends McpAgent<Env> {
 					"You should ALWAYS retry with stealth=true for anti-bot pages, waitUntil='networkidle' or 'settled' for SPAs, and raw=true for incomplete or empty pages.",
 				inputSchema: {
 					url: z.url(),
-					stealth: z.boolean().default(false).describe('Route through the stealth container instead of Cloudflare Browser Rendering.'),
-					raw: z.boolean().default(false).describe('Skip Defuddle content trimming and return the raw page conversion.'),
+					stealth: z.boolean().default(false).describe('Route through a stealth browser instead of Cloudflare Browser Run.'),
+					raw: z.boolean().default(false).describe('Skip Defuddle and return the raw page conversion.'),
 					waitUntil: z
 						.enum(['domcontentloaded', 'networkidle', 'settled'])
 						.default('domcontentloaded')
