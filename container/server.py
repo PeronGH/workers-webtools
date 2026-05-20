@@ -17,7 +17,6 @@ from __future__ import annotations
 import asyncio
 import base64
 import logging
-from urllib.parse import urlparse
 
 from aiohttp import web
 from cloakbrowser import launch_async
@@ -62,38 +61,26 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 log = logging.getLogger("stealth-webtools")
 
 
-async def _wait_generic(page) -> None:
-    await page.wait_for_selector(
-        "#anubis_challenge", state="detached", timeout=NAV_TIMEOUT_MS
-    )
-
-
-async def _wait_brave(page) -> None:
-    await page.wait_for_selector(
-        '#pow-captcha-content, div.snippet[data-type="web"]', timeout=NAV_TIMEOUT_MS
-    )
-    if await page.query_selector("#pow-captcha-content"):
-        await page.click('button:has-text("I\'m not a robot")', timeout=NAV_TIMEOUT_MS)
+async def _wait_anubis(page) -> None:
+    try:
         await page.wait_for_selector(
-            "#pow-captcha-content", state="detached", timeout=NAV_TIMEOUT_MS
+            "#anubis_challenge", state="detached", timeout=NAV_TIMEOUT_MS
         )
-
-
-SITE_HANDLERS = {
-    "search.brave.com": _wait_brave,
-}
+    except Exception as exc:
+        log.info("anubis wait error: %s", exc)
 
 
 async def _settle(page, url: str, wait_until: str, wait_for_timeout_ms: int) -> None:
     try:
-        await page.goto(url, wait_until=wait_until, timeout=NAV_TIMEOUT_MS)
+        await page.goto(url, wait_until="domcontentloaded", timeout=NAV_TIMEOUT_MS)
     except Exception as exc:
         log.info("goto error: %s", exc)
-    host = urlparse(url).hostname or ""
-    try:
-        await SITE_HANDLERS.get(host, _wait_generic)(page)
-    except Exception as exc:
-        log.info("site handler error: %s", exc)
+    await _wait_anubis(page)
+    if wait_until == "networkidle":
+        try:
+            await page.wait_for_load_state("networkidle", timeout=NAV_TIMEOUT_MS)
+        except Exception as exc:
+            log.info("networkidle wait error: %s", exc)
     if wait_for_timeout_ms > 0:
         await asyncio.sleep(wait_for_timeout_ms / 1000)
 

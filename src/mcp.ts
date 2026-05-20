@@ -12,7 +12,7 @@ import { rewritePageRequest } from './rewrite';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.6.0',
+		version: '0.7.0',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -23,15 +23,15 @@ export class WebToolsMCP extends McpAgent<Env> {
 				description:
 					'Fetch a URL as Markdown. Handles webpages and rich documents (PDFs, Office docs). ' +
 					'Output can be very long. ' +
-					"You should ALWAYS retry with stealth=true for anti-bot pages, waitUntil='networkidle' or '15s' for SPAs, and raw=true for incomplete or empty pages.",
+					"You should ALWAYS retry with stealth=true for anti-bot pages, waitUntil='networkidle' or 'extra5s' for SPAs, and raw=true for incomplete or empty pages.",
 				inputSchema: {
 					url: z.url(),
 					stealth: z.boolean().default(false).describe('Route through the stealth container instead of Cloudflare Browser Rendering.'),
 					raw: z.boolean().default(false).describe('Skip Defuddle content trimming and return the raw page conversion.'),
 					waitUntil: z
-						.enum(['domcontentloaded', 'networkidle', '15s'])
+						.enum(['domcontentloaded', 'networkidle', 'extra5s'])
 						.default('domcontentloaded')
-						.describe("Navigation wait strategy. '15s' waits for domcontentloaded then sleeps 15s for stubborn SPAs."),
+						.describe("Navigation wait strategy. 'extra5s' waits for networkidle then sleeps 5s for stubborn SPAs."),
 				},
 			},
 			async ({ url, stealth, raw, waitUntil }) => {

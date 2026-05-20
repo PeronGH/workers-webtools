@@ -29,8 +29,8 @@ function waitOptions(waitUntil: WaitUntil): {
 	if (waitUntil === 'networkidle') {
 		return { gotoOptions: { waitUntil: 'networkidle0', timeout: GOTO_TIMEOUT_MS } };
 	}
-	if (waitUntil === '15s') {
-		return { gotoOptions: { waitUntil: 'domcontentloaded', timeout: GOTO_TIMEOUT_MS }, waitForTimeout: 15_000 };
+	if (waitUntil === 'extra5s') {
+		return { gotoOptions: { waitUntil: 'networkidle0', timeout: GOTO_TIMEOUT_MS }, waitForTimeout: 5_000 };
 	}
 	return { gotoOptions: { waitUntil: 'domcontentloaded', timeout: GOTO_TIMEOUT_MS } };
 }
