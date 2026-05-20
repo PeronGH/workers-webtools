@@ -3,6 +3,7 @@ import type { FetchedHtml } from '../types';
 
 const REDDIT_LISTING = /^\/(r|u|user)\/[^/]+(\/[^/]+)?\/?$/;
 const SE_QUESTION = /^\/questions\/\d+(\/|$)/;
+const GITHUB_ISSUE = /^\/[^/]+\/[^/]+\/issues\/\d+/;
 
 /** Stack Exchange hosts share the same Q&A engine, so Defuddle mangles question pages identically across them. */
 const STACKEXCHANGE_HOSTS = new Set([
@@ -23,6 +24,7 @@ function defuddleManglesUrl(url: URL): boolean {
 	if (/(^|\.)reddit\.com$/.test(url.hostname) && REDDIT_LISTING.test(url.pathname)) return true;
 	if (isStackExchange(url.hostname) && SE_QUESTION.test(url.pathname)) return true;
 	if (url.hostname === 'xdaforums.com' && url.pathname.startsWith('/t/')) return true;
+	if (url.hostname === 'github.com' && GITHUB_ISSUE.test(url.pathname)) return true;
 	return false;
 }
 
