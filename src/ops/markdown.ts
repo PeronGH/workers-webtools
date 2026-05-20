@@ -20,17 +20,17 @@ export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Pr
 		if (first.result) return first.result;
 		const page = await pagePromise;
 		const defuddle = await extractPage(page);
-		return toMarkdown(page, defuddle, worker.env);
+		return toMarkdown(page, defuddle, { env: worker.env, full: request.full });
 	}
 
 	const page = first.result;
 	const defuddle = await extractPage(page);
 	if (defuddle.wordCount > 0) {
-		return toMarkdown(page, defuddle, worker.env);
+		return toMarkdown(page, defuddle, { env: worker.env, full: request.full });
 	}
 	const direct = await directPromise;
 	if (direct) return direct;
-	return toMarkdown(page, defuddle, worker.env);
+	return toMarkdown(page, defuddle, { env: worker.env, full: request.full });
 }
 
 async function fetchPage(worker: WorkerCtx, request: PageRequest): Promise<FetchedHtml> {

@@ -12,7 +12,7 @@ import { rewritePageRequest } from './rewrite';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.5.1',
+		version: '0.6.0',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -23,14 +23,15 @@ export class WebToolsMCP extends McpAgent<Env> {
 				description:
 					'Fetch a URL as Markdown. Handles webpages, images, and rich documents (PDFs, Office docs). ' +
 					'Output can be very long. ' +
-					'You should ALWAYS retry with fast=false if the result seems incomplete or blocked.',
+					'You should ALWAYS retry with fast=false for SPA or anti-bot pages, and with full=false for incomplete or empty pages.',
 				inputSchema: {
 					url: z.url(),
 					fast: z.boolean().default(true).describe('Initial HTML only. Disable for SPAs or anti-bot pages.'),
+					full: z.boolean().default(false).describe('Skip Defuddle content trimming and return the raw page conversion.'),
 				},
 			},
-			async ({ url, fast }) => {
-				const request = rewritePageRequest({ url, fast });
+			async ({ url, fast, full }) => {
+				const request = rewritePageRequest({ url, fast, full });
 				const markdown = await fetchMarkdown({ env: this.env }, request);
 				return { content: [{ type: 'text', text: markdown }] };
 			},

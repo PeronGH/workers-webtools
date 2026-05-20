@@ -27,9 +27,14 @@ function defuddleManglesUrl(url: URL): boolean {
 }
 
 /** Convert a settled page into Markdown via env.AI.toMarkdown. */
-export async function toMarkdown(page: FetchedHtml, defuddle: DefuddleResponse, env: Env): Promise<string> {
+export async function toMarkdown(
+	page: FetchedHtml,
+	defuddle: DefuddleResponse,
+	options: { env: Env; full?: boolean },
+): Promise<string> {
+	const { env, full = false } = options;
 	const pageUrl = new URL(page.finalUrl);
-	const useDefuddle = defuddle.wordCount > 0 && !defuddleManglesUrl(pageUrl);
+	const useDefuddle = !full && defuddle.wordCount > 0 && !defuddleManglesUrl(pageUrl);
 	const contentHtml = useDefuddle ? defuddle.content : page.html;
 	const result = await env.AI.toMarkdown(
 		{ name: 'page.html', blob: new Blob([contentHtml], { type: 'text/html' }) },
