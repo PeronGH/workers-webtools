@@ -48,7 +48,7 @@ function rpcBody(request: RenderOptions): RpcBody {
 
 function waitOptions(waitUntil: WaitUntil): { waitUntil: RpcWaitUntil; waitForTimeoutMs: number } {
 	if (waitUntil === 'networkidle') return { waitUntil: 'networkidle', waitForTimeoutMs: 0 };
-	if (waitUntil === 'extra5s') return { waitUntil: 'networkidle', waitForTimeoutMs: 5_000 };
+	if (waitUntil === 'settled') return { waitUntil: 'networkidle', waitForTimeoutMs: 5_000 };
 	return { waitUntil: 'domcontentloaded', waitForTimeoutMs: 0 };
 }
 

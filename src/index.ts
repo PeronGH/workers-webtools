@@ -10,7 +10,7 @@ import { CloakBrowser } from './render/container';
 import { rewritePageRequest } from './rewrite';
 import type { WaitUntil } from './types';
 
-const WAIT_UNTIL_VALUES: WaitUntil[] = ['domcontentloaded', 'networkidle', 'extra5s'];
+const WAIT_UNTIL_VALUES: WaitUntil[] = ['domcontentloaded', 'networkidle', 'settled'];
 
 function parseWaitUntil(header: string | undefined): WaitUntil {
 	const v = header?.trim() as WaitUntil | undefined;

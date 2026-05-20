@@ -29,7 +29,7 @@ function waitOptions(waitUntil: WaitUntil): {
 	if (waitUntil === 'networkidle') {
 		return { gotoOptions: { waitUntil: 'networkidle0', timeout: GOTO_TIMEOUT_MS } };
 	}
-	if (waitUntil === 'extra5s') {
+	if (waitUntil === 'settled') {
 		return { gotoOptions: { waitUntil: 'networkidle0', timeout: GOTO_TIMEOUT_MS }, waitForTimeout: 5_000 };
 	}
 	return { gotoOptions: { waitUntil: 'domcontentloaded', timeout: GOTO_TIMEOUT_MS } };
