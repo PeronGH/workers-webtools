@@ -1,4 +1,4 @@
-export type WorkerCtx = { env: Env; ctx?: ExecutionContext; rayId?: string };
+export type WorkerCtx = { env: Env; ctx?: ExecutionContext };
 
 export type WaitUntil = 'domcontentloaded' | 'networkidle' | 'settled';
 export type RenderOptions = { url: string; waitUntil: WaitUntil };

@@ -48,7 +48,7 @@ app.get('/fetch/*', async (c) => {
 		raw: c.req.header('x-raw')?.trim() === '1',
 		waitUntil: parseWaitUntil(c.req.header('x-wait-until')),
 	});
-	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
+	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
 	const markdown = await fetchMarkdown(worker, request);
 	return c.body(markdown, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
 });
@@ -56,8 +56,8 @@ app.get('/fetch/*', async (c) => {
 app.post('/ask/*', async (c) => {
 	const target = extractTarget(c, '/ask/');
 	const prompt = await c.req.text();
-	const request = rewritePageRequest({ url: target, stealth: true, raw: true, waitUntil: 'networkidle' });
-	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
+	const request = rewritePageRequest({ url: target, stealth: true, raw: true, waitUntil: 'settled' });
+	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
 	const answer = await askAboutPage(worker, request, prompt);
 	return c.body(answer, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
 });
@@ -65,7 +65,7 @@ app.post('/ask/*', async (c) => {
 app.get('/screenshot/*', async (c) => {
 	const target = extractTarget(c, '/screenshot/');
 	const request = rewritePageRequest({ url: target, stealth: true, raw: true, waitUntil: 'networkidle' });
-	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
+	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
 	const png = await fetchScreenshot(worker, request);
 	return c.body(png as Uint8Array<ArrayBuffer>, 200, { 'Content-Type': 'image/png' });
 });
@@ -75,7 +75,7 @@ app.get('/search', async (c) => {
 	if (!query) {
 		throw new HTTPException(400, { message: 'q query param is required' });
 	}
-	const results = await search(query, { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') });
+	const results = await search(query, { env: c.env, ctx: c.executionCtx as ExecutionContext });
 	return c.json(results);
 });
 

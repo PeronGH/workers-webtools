@@ -65,7 +65,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
-				const request = rewritePageRequest({ url, stealth: true, raw: true, waitUntil: 'networkidle' });
+				const request = rewritePageRequest({ url, stealth: true, raw: true, waitUntil: 'settled' });
 				const { markdown, png } = await fetchSnapshot({ env: this.env }, request);
 				return {
 					content: [
@@ -89,7 +89,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				},
 			},
 			async ({ url, prompt }) => {
-				const request = rewritePageRequest({ url, stealth: true, raw: true, waitUntil: 'networkidle' });
+				const request = rewritePageRequest({ url, stealth: true, raw: true, waitUntil: 'settled' });
 				const answer = await askAboutPage({ env: this.env }, request, prompt);
 				return { content: [{ type: 'text', text: answer }] };
 			},
