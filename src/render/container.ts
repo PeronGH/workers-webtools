@@ -1,16 +1,13 @@
 import { Container, getContainer } from '@cloudflare/containers';
 import type { FetchedHtml, PageRequest, SnapshotData, WorkerCtx } from '../types';
 
-/** Container hosting one CloakBrowser instance. `max_instances: 1` in
- *  wrangler.jsonc plus a default `getContainer(env.CLOAK)` (no name)
- *  keeps all traffic on the single shared instance. */
+/** Single shared CloakBrowser instance. */
 export class CloakBrowser extends Container {
 	defaultPort = 8000;
 	sleepAfter = '1h';
 }
 
-// RPC contract with container/server.py — keep request/response shapes in
-// lockstep with the Python handlers in container/server.py.
+/** Shapes must match container/server.py handlers. */
 type Routes = {
 	'/fetch': {
 		req: { url: string };

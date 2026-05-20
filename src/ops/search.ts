@@ -8,8 +8,7 @@ export type SearchResult = {
 	snippet: string;
 };
 
-// linkedom's NodeList iterates as `unknown`. We describe just the surface we
-// touch and cast each item once with a single `as` from unknown.
+/** Structural type for the linkedom nodes we touch. */
 type SearchEl = {
 	querySelector(selector: string): {
 		textContent: string | null;
