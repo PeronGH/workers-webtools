@@ -1,4 +1,5 @@
 import Cloudflare from 'cloudflare';
+import { SETTLED_EXTRA_MS } from '../constants';
 import type { FetchedHtml, RenderOptions, WaitUntil, WorkerCtx } from '../types';
 
 const GOTO_TIMEOUT_MS = 15_000;
@@ -30,7 +31,7 @@ function waitOptions(waitUntil: WaitUntil): {
 		return { gotoOptions: { waitUntil: 'networkidle0', timeout: GOTO_TIMEOUT_MS } };
 	}
 	if (waitUntil === 'settled') {
-		return { gotoOptions: { waitUntil: 'networkidle0', timeout: GOTO_TIMEOUT_MS }, waitForTimeout: 5_000 };
+		return { gotoOptions: { waitUntil: 'networkidle0', timeout: GOTO_TIMEOUT_MS }, waitForTimeout: SETTLED_EXTRA_MS };
 	}
 	return { gotoOptions: { waitUntil: 'domcontentloaded', timeout: GOTO_TIMEOUT_MS } };
 }

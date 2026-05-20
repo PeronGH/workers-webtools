@@ -1,6 +1,7 @@
 import { getContainer } from '@cloudflare/containers';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { STEALTH_DEFAULTS, WAIT_UNTIL_VALUES } from './constants';
 import { WebToolsMCP } from './mcp';
 import { askAboutPage } from './ops/ask';
 import { fetchMarkdown } from './ops/markdown';
@@ -9,8 +10,6 @@ import { search } from './ops/search';
 import { CloakBrowser } from './render/container';
 import { rewritePageRequest } from './rewrite';
 import type { WaitUntil } from './types';
-
-const WAIT_UNTIL_VALUES: WaitUntil[] = ['domcontentloaded', 'networkidle', 'settled'];
 
 function parseWaitUntil(header: string | undefined): WaitUntil {
 	const v = header?.trim() as WaitUntil | undefined;
@@ -56,7 +55,7 @@ app.get('/fetch/*', async (c) => {
 app.post('/ask/*', async (c) => {
 	const target = extractTarget(c, '/ask/');
 	const prompt = await c.req.text();
-	const request = rewritePageRequest({ url: target, stealth: true, raw: true, waitUntil: 'settled' });
+	const request = rewritePageRequest({ url: target, ...STEALTH_DEFAULTS });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
 	const answer = await askAboutPage(worker, request, prompt);
 	return c.body(answer, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
@@ -64,7 +63,7 @@ app.post('/ask/*', async (c) => {
 
 app.get('/screenshot/*', async (c) => {
 	const target = extractTarget(c, '/screenshot/');
-	const request = rewritePageRequest({ url: target, stealth: true, raw: true, waitUntil: 'networkidle' });
+	const request = rewritePageRequest({ url: target, ...STEALTH_DEFAULTS });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext };
 	const png = await fetchScreenshot(worker, request);
 	return c.body(png as Uint8Array<ArrayBuffer>, 200, { 'Content-Type': 'image/png' });

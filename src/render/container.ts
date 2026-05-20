@@ -1,4 +1,5 @@
 import { Container, getContainer } from '@cloudflare/containers';
+import { SETTLED_EXTRA_MS } from '../constants';
 import type { FetchedHtml, RenderOptions, SnapshotData, WaitUntil, WorkerCtx } from '../types';
 
 /** Single shared CloakBrowser instance. */
@@ -48,7 +49,7 @@ function rpcBody(request: RenderOptions): RpcBody {
 
 function waitOptions(waitUntil: WaitUntil): { waitUntil: RpcWaitUntil; waitForTimeoutMs: number } {
 	if (waitUntil === 'networkidle') return { waitUntil: 'networkidle', waitForTimeoutMs: 0 };
-	if (waitUntil === 'settled') return { waitUntil: 'networkidle', waitForTimeoutMs: 5_000 };
+	if (waitUntil === 'settled') return { waitUntil: 'networkidle', waitForTimeoutMs: SETTLED_EXTRA_MS };
 	return { waitUntil: 'domcontentloaded', waitForTimeoutMs: 0 };
 }
 

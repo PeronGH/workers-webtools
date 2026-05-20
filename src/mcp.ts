@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
 import { Buffer } from 'node:buffer';
 import { z } from 'zod';
+import { STEALTH_DEFAULTS, WAIT_UNTIL_VALUES } from './constants';
 import { askAboutPage } from './ops/ask';
 import { fetchMarkdown } from './ops/markdown';
 import { fetchScreenshot } from './ops/screenshot';
@@ -29,7 +30,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 					stealth: z.boolean().default(false).describe('Route through a stealth browser instead of Cloudflare Browser Run.'),
 					raw: z.boolean().default(false).describe('Skip Defuddle and return the raw page conversion.'),
 					waitUntil: z
-						.enum(['domcontentloaded', 'networkidle', 'settled'])
+						.enum(WAIT_UNTIL_VALUES)
 						.default('domcontentloaded')
 						.describe("Navigation wait strategy. 'settled' waits for networkidle then sleeps 5s for stubborn SPAs."),
 				},
@@ -51,7 +52,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
-				const request = rewritePageRequest({ url, stealth: true, raw: true, waitUntil: 'networkidle' });
+				const request = rewritePageRequest({ url, ...STEALTH_DEFAULTS });
 				const png = await fetchScreenshot({ env: this.env }, request);
 				const data = Buffer.from(png).toString('base64');
 				return { content: [{ type: 'image', data, mimeType: 'image/png' }] };
@@ -65,7 +66,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
-				const request = rewritePageRequest({ url, stealth: true, raw: true, waitUntil: 'settled' });
+				const request = rewritePageRequest({ url, ...STEALTH_DEFAULTS });
 				const { markdown, png } = await fetchSnapshot({ env: this.env }, request);
 				return {
 					content: [
@@ -89,7 +90,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				},
 			},
 			async ({ url, prompt }) => {
-				const request = rewritePageRequest({ url, stealth: true, raw: true, waitUntil: 'settled' });
+				const request = rewritePageRequest({ url, ...STEALTH_DEFAULTS });
 				const answer = await askAboutPage({ env: this.env }, request, prompt);
 				return { content: [{ type: 'text', text: answer }] };
 			},
