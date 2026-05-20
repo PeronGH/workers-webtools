@@ -30,11 +30,11 @@ function defuddleManglesUrl(url: URL): boolean {
 export async function toMarkdown(
 	page: FetchedHtml,
 	defuddle: DefuddleResponse,
-	options: { env: Env; full: boolean },
+	options: { env: Env; raw: boolean },
 ): Promise<string> {
-	const { env, full } = options;
+	const { env, raw } = options;
 	const pageUrl = new URL(page.finalUrl);
-	const useDefuddle = !full && defuddle.wordCount > 0 && !defuddleManglesUrl(pageUrl);
+	const useDefuddle = !raw && defuddle.wordCount > 0 && !defuddleManglesUrl(pageUrl);
 	const contentHtml = useDefuddle ? defuddle.content : page.html;
 	const result = await env.AI.toMarkdown(
 		{ name: 'page.html', blob: new Blob([contentHtml], { type: 'text/html' }) },

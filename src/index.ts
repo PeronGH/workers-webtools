@@ -44,8 +44,8 @@ app.get('/fetch/*', async (c) => {
 	const target = extractTarget(c, '/fetch/');
 	const request = rewritePageRequest({
 		url: target,
-		stealth: !!c.req.header('x-stealth')?.trim(),
-		full: c.req.header('x-full')?.trim() === '1',
+		stealth: c.req.header('x-stealth')?.trim() === '1',
+		raw: c.req.header('x-raw')?.trim() === '1',
 		waitUntil: parseWaitUntil(c.req.header('x-wait-until')),
 	});
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
@@ -56,7 +56,7 @@ app.get('/fetch/*', async (c) => {
 app.post('/ask/*', async (c) => {
 	const target = extractTarget(c, '/ask/');
 	const prompt = await c.req.text();
-	const request = rewritePageRequest({ url: target, stealth: true, full: true, waitUntil: 'networkidle' });
+	const request = rewritePageRequest({ url: target, stealth: true, raw: true, waitUntil: 'networkidle' });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
 	const answer = await askAboutPage(worker, request, prompt);
 	return c.body(answer, 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
@@ -64,7 +64,7 @@ app.post('/ask/*', async (c) => {
 
 app.get('/screenshot/*', async (c) => {
 	const target = extractTarget(c, '/screenshot/');
-	const request = rewritePageRequest({ url: target, stealth: true, full: true, waitUntil: 'networkidle' });
+	const request = rewritePageRequest({ url: target, stealth: true, raw: true, waitUntil: 'networkidle' });
 	const worker = { env: c.env, ctx: c.executionCtx as ExecutionContext, rayId: c.req.header('cf-ray') };
 	const png = await fetchScreenshot(worker, request);
 	return c.body(png as Uint8Array<ArrayBuffer>, 200, { 'Content-Type': 'image/png' });

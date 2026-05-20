@@ -28,17 +28,17 @@ export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Pr
 	if (first.source === 'direct') {
 		if (first.ok && first.markdown) return first.markdown;
 		const page = await pagePromise;
-		if (page.ok) return toMarkdown(page.page, page.defuddle, { env: worker.env, full: request.full });
+		if (page.ok) return toMarkdown(page.page, page.defuddle, { env: worker.env, raw: request.raw });
 		throwMarkdownError(page.error, first.ok ? undefined : first.error);
 	}
 
 	if (first.ok) {
 		if (first.defuddle.wordCount > 0) {
-			return toMarkdown(first.page, first.defuddle, { env: worker.env, full: request.full });
+			return toMarkdown(first.page, first.defuddle, { env: worker.env, raw: request.raw });
 		}
 		const direct = await directPromise;
 		if (direct.ok && direct.markdown) return direct.markdown;
-		return toMarkdown(first.page, first.defuddle, { env: worker.env, full: request.full });
+		return toMarkdown(first.page, first.defuddle, { env: worker.env, raw: request.raw });
 	}
 
 	const direct = await directPromise;
