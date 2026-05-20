@@ -47,7 +47,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
-				const request = rewritePageRequest({ url });
+				const request = rewritePageRequest({ url, fast: false, full: true });
 				const png = await fetchScreenshot({ env: this.env }, request);
 				const data = Buffer.from(png).toString('base64');
 				return { content: [{ type: 'image', data, mimeType: 'image/png' }] };
@@ -61,7 +61,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
-				const request = rewritePageRequest({ url });
+				const request = rewritePageRequest({ url, fast: false, full: true });
 				const { markdown, png } = await fetchSnapshot({ env: this.env }, request);
 				return {
 					content: [
@@ -85,7 +85,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				},
 			},
 			async ({ url, prompt }) => {
-				const request = rewritePageRequest({ url });
+				const request = rewritePageRequest({ url, fast: false, full: true });
 				const answer = await askAboutPage({ env: this.env }, request, prompt);
 				return { content: [{ type: 'text', text: answer }] };
 			},

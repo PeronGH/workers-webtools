@@ -27,7 +27,7 @@ export async function search(query: string, worker: WorkerCtx): Promise<SearchRe
 	});
 	const url = `https://search.brave.com/search?${params}`;
 
-	const { html } = await fetchFastHtml(worker, { url });
+	const { html } = await fetchFastHtml(worker, { url, fast: true, full: false });
 	const { document } = parseHTML(html);
 	return Array.from(document.querySelectorAll('div.snippet[data-type="web"]'), (raw) => {
 		const item = raw as SearchEl;
