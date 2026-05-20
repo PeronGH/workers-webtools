@@ -23,7 +23,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				description:
 					'Fetch a URL as Markdown. Handles webpages, images, and rich documents (PDFs, Office docs). ' +
 					'Output can be very long. ' +
-					'You should ALWAYS retry with fast=false for SPA or anti-bot pages, and with full=false for incomplete or empty pages.',
+					'You should ALWAYS retry with fast=false for SPA or anti-bot pages, and with full=true for incomplete or empty pages.',
 				inputSchema: {
 					url: z.url(),
 					fast: z.boolean().default(true).describe('Initial HTML only. Disable for SPAs or anti-bot pages.'),
