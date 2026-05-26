@@ -5,9 +5,7 @@ import { stealthFetchHtml } from '../render/container';
 import { fetchDirect } from '../render/direct';
 import type { FetchOptions, FetchedHtml, PageRequest, WorkerCtx } from '../types';
 
-type DirectResult =
-	| { source: 'direct'; ok: true; markdown: string | null }
-	| { source: 'direct'; ok: false; error: unknown };
+type DirectResult = { source: 'direct'; ok: true; markdown: string | null } | { source: 'direct'; ok: false; error: unknown };
 
 type PageResult =
 	| { source: 'page'; ok: true; page: FetchedHtml; defuddle: Awaited<ReturnType<typeof extractPage>> }
@@ -48,11 +46,7 @@ export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Pr
 
 async function fetchPage(worker: WorkerCtx, request: FetchOptions): Promise<FetchedHtml> {
 	if (request.stealth) return stealthFetchHtml(worker, request);
-	try {
-		return await fetchHtml(worker, request);
-	} catch {
-		return stealthFetchHtml(worker, request);
-	}
+	return fetchHtml(worker, request);
 }
 
 function throwMarkdownError(primary: unknown, secondary: unknown | undefined): never {
