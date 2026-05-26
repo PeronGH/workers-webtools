@@ -13,7 +13,7 @@ import { rewritePageRequest } from './rewrite';
 export class WebToolsMCP extends McpAgent<Env> {
 	server = new McpServer({
 		name: 'webtools',
-		version: '0.7.1',
+		version: '0.7.2',
 		description: 'Web tools backed by a headless Chromium browser',
 	});
 
@@ -46,7 +46,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			'screenshot',
 			{
 				description:
-					'Take a full-page PNG screenshot of a webpage. ' +
+					'Run `snapshot` but only returns the screenshot. ' +
 					'Use only when you want visual identity alone; ' +
 					'if you also care about the content, use `snapshot`.',
 				inputSchema: { url: z.url() },
@@ -62,7 +62,9 @@ export class WebToolsMCP extends McpAgent<Env> {
 		this.server.registerTool(
 			'snapshot',
 			{
-				description: 'Run `fetch` and `screenshot` together.',
+				description:
+					'Run `fetch(stealth=true, waitUntil=settled, raw=true)` and take a full-page PNG screenshot of a webpage.' +
+					' Returns both fetch result and screenshot.',
 				inputSchema: { url: z.url() },
 			},
 			async ({ url }) => {
@@ -81,7 +83,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			'ask',
 			{
 				description:
-					'Run `fetch` on the URL under the hood, then have an LLM respond to your prompt about its content. ' +
+					'Run `fetch(stealth=true, waitUntil=settled, raw=true)` on the URL under the hood, then have an LLM respond to your prompt about its content. ' +
 					'Slow due to the LLM round trip. ' +
 					'Use when you want a focused answer.',
 				inputSchema: {
