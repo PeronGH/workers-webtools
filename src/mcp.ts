@@ -23,7 +23,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			{
 				description:
 					'Fetch a URL as Markdown. Handles webpages and rich documents (PDFs, Office docs). ' +
-					'Output can be very long. ' +
+					'Output can be very long when raw=true. ' +
 					"You should ALWAYS retry `fetch` with stealth=true for anti-bot pages, waitUntil='networkidle' or 'settled' for SPAs, and raw=true for incomplete or empty pages.",
 				inputSchema: {
 					url: z.url(),
