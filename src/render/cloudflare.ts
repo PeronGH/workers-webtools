@@ -1,24 +1,19 @@
-import Cloudflare from 'cloudflare';
 import { SETTLED_EXTRA_MS } from '../constants';
 import type { FetchedHtml, RenderOptions, WaitUntil, WorkerCtx } from '../types';
 
 const GOTO_TIMEOUT_MS = 15_000;
 
 export async function fetchHtml({ env }: WorkerCtx, request: RenderOptions): Promise<FetchedHtml> {
-	const accountId = env.CLOUDFLARE_ACCOUNT_ID?.trim();
-	const apiToken = env.CLOUDFLARE_API_TOKEN?.trim();
-	if (!accountId || !apiToken) {
-		throw new Error('Browser Rendering requires CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN secrets.');
-	}
-	const client = new Cloudflare({ apiToken });
-	const html = await client.browserRendering.content.create({
-		account_id: accountId,
+	const response = await env.BROWSER.quickAction('content', {
 		url: request.url,
 		...waitOptions(request.waitUntil),
 		rejectResourceTypes: ['image', 'media', 'font', 'texttrack', 'prefetch'],
 	});
+	if (!response.ok) {
+		throw new Error(`Browser Rendering content failed (${response.status}): ${await response.text()}`);
+	}
 	return {
-		html,
+		html: await response.text(),
 		finalUrl: request.url,
 	};
 }

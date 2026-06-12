@@ -20,8 +20,8 @@ export async function askAboutPage(worker: WorkerCtx, request: PageRequest, prom
 			{ role: 'user', content: prompt },
 		],
 		temperature: 0.2,
-		// K2.6 renamed `enable_thinking` to `thinking`; workerd's AI catalog still has the old name.
-		chat_template_kwargs: { thinking: false },
+		// K2.6 renamed `enable_thinking` to `thinking`; workerd's ChatTemplateKwargs still types the old name.
+		chat_template_kwargs: { thinking: false } as ChatTemplateKwargs,
 	});
-	return (response as AiModels['@cf/moonshotai/kimi-k2.5']['postProcessedOutputs']).choices[0].message.content ?? '';
+	return response.choices[0].message.content ?? '';
 }
