@@ -2,7 +2,7 @@ import { extractPage } from '../extract/defuddle';
 import { toMarkdown } from '../extract/markdown';
 import { fetchHtml } from '../render/cloudflare';
 import { stealthFetchHtml } from '../render/container';
-import { fetchDirect } from '../render/direct';
+import { fetchDirect, fetchPageDirect } from '../render/direct';
 import type { FetchOptions, FetchedHtml, PageRequest, WorkerCtx } from '../types';
 
 type DirectResult = { source: 'direct'; ok: true; markdown: string | null } | { source: 'direct'; ok: false; error: unknown };
@@ -12,6 +12,11 @@ type PageResult =
 	| { source: 'page'; ok: false; error: unknown };
 
 export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Promise<string> {
+	// A plain GET is enough when we only wait for DOMContentLoaded — one fetch, no browser.
+	if (!request.stealth && request.waitUntil === 'domcontentloaded') {
+		return fetchSimple(worker, request);
+	}
+
 	const directPromise = fetchDirect(request.url, worker.env).then<DirectResult, DirectResult>(
 		(markdown) => ({ source: 'direct', ok: true, markdown }),
 		(error) => ({ source: 'direct', ok: false, error }),
@@ -42,6 +47,13 @@ export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Pr
 	const direct = await directPromise;
 	if (direct.ok && direct.markdown) return direct.markdown;
 	throwMarkdownError(first.error, direct.ok ? undefined : direct.error);
+}
+
+async function fetchSimple(worker: WorkerCtx, request: PageRequest): Promise<string> {
+	const result = await fetchPageDirect(request.url, worker.env);
+	if (result.kind === 'markdown') return result.markdown;
+	const defuddle = await extractPage(result.page);
+	return toMarkdown(result.page, defuddle, { env: worker.env, raw: request.raw });
 }
 
 async function fetchPage(worker: WorkerCtx, request: FetchOptions): Promise<FetchedHtml> {
