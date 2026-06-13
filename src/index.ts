@@ -74,7 +74,7 @@ app.get('/search', async (c) => {
 	if (!query) {
 		throw new HTTPException(400, { message: 'q query param is required' });
 	}
-	const results = await search(query, { env: c.env, ctx: c.executionCtx as ExecutionContext });
+	const results = await search(query);
 	return c.json(results);
 });
 
