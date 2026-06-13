@@ -34,7 +34,7 @@ export async function search(query: string, worker: WorkerCtx): Promise<SearchRe
 		return {
 			title: item.querySelector('.search-snippet-title')?.textContent?.trim() ?? '',
 			url: item.querySelector('a.l1')?.getAttribute('href') ?? '',
-			snippet: item.querySelector('.generic-snippet .content')?.textContent?.trim() ?? '',
+			snippet: item.querySelector('.generic-snippet')?.textContent?.trim() ?? '',
 		};
 	});
 }
