@@ -1,5 +1,7 @@
 import { parseHTML } from 'linkedom';
+import { stealthFetchHtml } from '../render/container';
 import { fetchHtmlDirect } from '../render/direct';
+import type { WorkerCtx } from '../types';
 
 export type SearchResult = {
 	title: string;
@@ -15,7 +17,7 @@ type SearchEl = {
 	} | null;
 };
 
-export async function search(query: string): Promise<SearchResult[]> {
+export async function search(worker: WorkerCtx, query: string): Promise<SearchResult[]> {
 	const params = new URLSearchParams({
 		q: query,
 		source: 'web',
@@ -24,7 +26,8 @@ export async function search(query: string): Promise<SearchResult[]> {
 	});
 	const url = `https://search.brave.com/search?${params}`;
 
-	const { html } = await fetchHtmlDirect(url);
+	// Brave serves a bot challenge to plain fetches; fall back to the stealth browser when that happens.
+	const { html } = await fetchHtmlDirect(url).catch(() => stealthFetchHtml(worker, { url, waitUntil: 'domcontentloaded' }));
 	const { document } = parseHTML(html);
 	return Array.from(document.querySelectorAll('div.snippet[data-type="web"]'), (raw) => {
 		const item = raw as SearchEl;
