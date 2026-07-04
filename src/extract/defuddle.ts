@@ -4,5 +4,5 @@ import type { FetchedHtml } from '../types';
 
 export async function extractPage(page: FetchedHtml): Promise<DefuddleResponse> {
 	const { document } = parseHTML(page.html);
-	return Defuddle(document, page.finalUrl, { includeReplies: true });
+	return Defuddle(document, page.finalUrl, { includeReplies: true, useAsync: false });
 }
