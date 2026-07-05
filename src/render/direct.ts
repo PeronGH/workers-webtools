@@ -32,17 +32,6 @@ async function documentToMarkdown(env: Env, url: string, contentType: string | n
 	return result.format === 'markdown' ? result.data : null;
 }
 
-/** Plain HTTP fetch of an HTML page, skipping Browser Rendering. Throws on non-ok or non-HTML responses. */
-export async function fetchHtmlDirect(url: string): Promise<FetchedHtml> {
-	const response = await directFetch(url);
-	const contentType = response.headers.get('content-type');
-	if (!isHtml(contentType)) {
-		response.body?.cancel().catch(() => {});
-		throw new Error(`Expected HTML but got ${contentType} for ${url}`);
-	}
-	return { html: await response.text(), finalUrl: response.url || url };
-}
-
 /** Single direct fetch that handles both HTML pages and documents (PDFs, etc.) without spinning up a browser. */
 export async function fetchPageDirect(url: string, env: Env): Promise<DirectFetch> {
 	const response = await directFetch(url);

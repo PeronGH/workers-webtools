@@ -101,7 +101,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 		this.server.registerTool(
 			'search',
 			{
-				description: 'Search the web via Brave Search.',
+				description: 'Search the web via SearXNG.',
 				inputSchema: { query: z.string() },
 				outputSchema: {
 					results: z.array(
@@ -114,7 +114,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 				},
 			},
 			async ({ query }) => {
-				const results = await search({ env: this.env }, query);
+				const results = await search(query);
 				return {
 					content: [{ type: 'text', text: JSON.stringify(results, null, 2) }],
 					structuredContent: { results },
