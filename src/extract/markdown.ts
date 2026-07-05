@@ -2,6 +2,8 @@ import type { DefuddleResponse } from 'defuddle/node';
 import type { FetchedHtml } from '../types';
 import { extractPage } from './defuddle';
 
+/** eddrit mirrors Reddit's URL scheme; Reddit traffic is rewritten there (see rewrite.ts). */
+const REDDIT_HOSTS = /(^|\.)(reddit|eddrit)\.com$/;
 const REDDIT_LISTING = /^\/(r|u|user)\/[^/]+(\/[^/]+)?\/?$/;
 const SE_QUESTION = /^\/questions\/\d+(\/|$)/;
 const GITHUB_ISSUE = /^\/[^/]+\/[^/]+\/issues\/\d+/;
@@ -22,7 +24,7 @@ function isStackExchange(hostname: string): boolean {
 
 /** Hosts and paths where Defuddle is known to mangle the extracted content. */
 function defuddleManglesUrl(url: URL): boolean {
-	if (/(^|\.)reddit\.com$/.test(url.hostname) && REDDIT_LISTING.test(url.pathname)) return true;
+	if (REDDIT_HOSTS.test(url.hostname) && (url.pathname === '/' || REDDIT_LISTING.test(url.pathname))) return true;
 	if (isStackExchange(url.hostname) && SE_QUESTION.test(url.pathname)) return true;
 	if (url.hostname === 'xdaforums.com' && url.pathname.startsWith('/t/')) return true;
 	if (url.hostname === 'github.com' && GITHUB_ISSUE.test(url.pathname)) return true;
