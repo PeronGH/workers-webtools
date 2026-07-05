@@ -1,5 +1,5 @@
 import { extractPage } from '../extract/defuddle';
-import { toMarkdown } from '../extract/markdown';
+import { pageToMarkdown, toMarkdown } from '../extract/markdown';
 import { fetchHtml } from '../render/cloudflare';
 import { stealthFetchHtml } from '../render/container';
 import { fetchDirect, fetchPageDirect } from '../render/direct';
@@ -53,10 +53,11 @@ async function directAttempt(env: Env, url: string): Promise<Attempt> {
 async function pageAttempt(env: Env, request: PageRequest): Promise<Rendered | Failed> {
 	try {
 		const page = await fetchPage(env, request);
+		// Even in raw mode the extraction runs: wordCount decides the confidence tier.
 		const defuddle = await extractPage(page);
 		return {
 			status: defuddle.wordCount > 0 ? 'content' : 'fallback',
-			render: () => toMarkdown(page, defuddle, { env, raw: request.raw }),
+			render: () => toMarkdown(env, page, request.raw ? null : defuddle),
 		};
 	} catch (error) {
 		return { status: 'failed', error };
@@ -66,8 +67,7 @@ async function pageAttempt(env: Env, request: PageRequest): Promise<Rendered | F
 async function fetchSimple(env: Env, request: PageRequest): Promise<string> {
 	const result = await fetchPageDirect(request.url, env);
 	if (result.kind === 'markdown') return result.markdown;
-	const defuddle = await extractPage(result.page);
-	return toMarkdown(result.page, defuddle, { env, raw: request.raw });
+	return pageToMarkdown(env, result.page, request.raw);
 }
 
 async function fetchPage(env: Env, request: FetchOptions): Promise<FetchedHtml> {

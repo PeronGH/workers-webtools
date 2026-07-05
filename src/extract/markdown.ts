@@ -1,5 +1,6 @@
 import type { DefuddleResponse } from 'defuddle/node';
 import type { FetchedHtml } from '../types';
+import { extractPage } from './defuddle';
 
 const REDDIT_LISTING = /^\/(r|u|user)\/[^/]+(\/[^/]+)?\/?$/;
 const SE_QUESTION = /^\/questions\/\d+(\/|$)/;
@@ -28,11 +29,18 @@ function defuddleManglesUrl(url: URL): boolean {
 	return false;
 }
 
-/** Convert a settled page into Markdown via env.AI.toMarkdown. */
-export async function toMarkdown(page: FetchedHtml, defuddle: DefuddleResponse, options: { env: Env; raw: boolean }): Promise<string> {
-	const { env, raw } = options;
+/** Run Defuddle (unless raw) and convert a settled page into Markdown. */
+export async function pageToMarkdown(env: Env, page: FetchedHtml, raw: boolean): Promise<string> {
+	return toMarkdown(env, page, raw ? null : await extractPage(page));
+}
+
+/**
+ * Convert a settled page into Markdown via env.AI.toMarkdown, preferring the Defuddle
+ * extraction (with front matter) when it is trustworthy. Pass null to convert the raw page.
+ */
+export async function toMarkdown(env: Env, page: FetchedHtml, defuddle: DefuddleResponse | null): Promise<string> {
 	const pageUrl = new URL(page.finalUrl);
-	const useDefuddle = !raw && defuddle.wordCount > 0 && !defuddleManglesUrl(pageUrl);
+	const useDefuddle = defuddle !== null && defuddle.wordCount > 0 && !defuddleManglesUrl(pageUrl);
 	const contentHtml = useDefuddle ? defuddle.content : page.html;
 	const result = await env.AI.toMarkdown(
 		{ name: 'page.html', blob: new Blob([contentHtml], { type: 'text/html' }) },
