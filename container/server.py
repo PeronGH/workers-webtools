@@ -71,6 +71,8 @@ async def _wait_anubis(page) -> None:
 
 
 async def _settle(page, url: str, wait_until: str, wait_for_timeout_ms: int) -> None:
+    """Best-effort navigation: goto/idle timeouts are logged, not raised, and whatever
+    has rendered gets captured (unlike the Worker's Browser Rendering path, which fails hard)."""
     try:
         await page.goto(url, wait_until="domcontentloaded", timeout=NAV_TIMEOUT_MS)
     except Exception as exc:

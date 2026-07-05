@@ -2,7 +2,7 @@ import { extractPage } from '../extract/defuddle';
 import { pageToMarkdown, toMarkdown } from '../extract/markdown';
 import { fetchHtml } from '../render/cloudflare';
 import { stealthFetchHtml } from '../render/container';
-import { fetchDirect, fetchPageDirect } from '../render/direct';
+import { fetchDocumentDirect, fetchPageDirect } from '../render/direct';
 import type { FetchOptions, FetchedHtml, PageRequest } from '../types';
 
 /**
@@ -42,7 +42,7 @@ export async function fetchMarkdown(env: Env, request: PageRequest): Promise<str
 
 async function directAttempt(env: Env, url: string): Promise<Attempt> {
 	try {
-		const markdown = await fetchDirect(url, env);
+		const markdown = await fetchDocumentDirect(env, url);
 		if (!markdown) return { status: 'none' };
 		return { status: 'content', render: async () => markdown };
 	} catch (error) {
@@ -65,7 +65,7 @@ async function pageAttempt(env: Env, request: PageRequest): Promise<Rendered | F
 }
 
 async function fetchSimple(env: Env, request: PageRequest): Promise<string> {
-	const result = await fetchPageDirect(request.url, env);
+	const result = await fetchPageDirect(env, request.url);
 	if (result.kind === 'markdown') return result.markdown;
 	return pageToMarkdown(env, result.page, request.raw);
 }

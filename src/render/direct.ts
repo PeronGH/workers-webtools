@@ -33,7 +33,7 @@ async function documentToMarkdown(env: Env, url: string, contentType: string | n
 }
 
 /** Single direct fetch that handles both HTML pages and documents (PDFs, etc.) without spinning up a browser. */
-export async function fetchPageDirect(url: string, env: Env): Promise<DirectFetch> {
+export async function fetchPageDirect(env: Env, url: string): Promise<DirectFetch> {
 	const response = await directFetch(url);
 	const contentType = response.headers.get('content-type');
 	if (isHtml(contentType)) {
@@ -44,13 +44,14 @@ export async function fetchPageDirect(url: string, env: Env): Promise<DirectFetc
 	return { kind: 'markdown', markdown };
 }
 
-/** Speculative non-HTML grab used to race against Browser Rendering. Returns null for HTML or any failure. */
-export async function fetchDirect(url: string, env: Env): Promise<string | null> {
-	const response = await fetch(url, { headers: { 'user-agent': 'curl/8.7.1' } }).catch(() => null);
-	if (!response?.ok) {
-		response?.body?.cancel().catch(() => {});
-		return null;
-	}
+/**
+ * Speculative document grab raced against Browser Rendering. Resolves null when the URL is
+ * unreachable or serves HTML (the browser's job); conversion errors still throw so the race
+ * can report them.
+ */
+export async function fetchDocumentDirect(env: Env, url: string): Promise<string | null> {
+	const response = await directFetch(url).catch(() => null);
+	if (!response) return null;
 	const contentType = response.headers.get('content-type');
 	if (isHtml(contentType)) {
 		response.body?.cancel().catch(() => {});

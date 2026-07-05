@@ -10,10 +10,14 @@ export async function fetchHtml(env: Env, request: RenderOptions): Promise<Fetch
 		rejectResourceTypes: ['image', 'media', 'font', 'texttrack', 'prefetch'],
 	});
 	if (!response.ok) {
+		// Hard failure by design, unlike the stealth container's best-effort capture:
+		// surfacing the error lets the client retry with stealth=true.
 		throw new Error(`Browser Rendering content failed (${response.status}): ${await response.text()}`);
 	}
 	return {
 		html: await response.text(),
+		// quickAction('content') doesn't expose the post-redirect URL, so redirected pages
+		// resolve relative links and Defuddle host rules against the request URL.
 		finalUrl: request.url,
 	};
 }
