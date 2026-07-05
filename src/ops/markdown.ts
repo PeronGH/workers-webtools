@@ -5,11 +5,15 @@ import { stealthFetchHtml } from '../render/container';
 import { fetchDirect, fetchPageDirect } from '../render/direct';
 import type { FetchOptions, FetchedHtml, PageRequest, WorkerCtx } from '../types';
 
-type DirectResult = { source: 'direct'; ok: true; markdown: string | null } | { source: 'direct'; ok: false; error: unknown };
-
-type PageResult =
-	| { source: 'page'; ok: true; page: FetchedHtml; defuddle: Awaited<ReturnType<typeof extractPage>> }
-	| { source: 'page'; ok: false; error: unknown };
+/**
+ * Outcome of one competitor in the direct-vs-browser race.
+ * - `content`: confident markdown — the first competitor to produce one wins.
+ * - `fallback`: the page rendered but Defuddle found no words; used only when nothing else succeeds.
+ * - `none`: the direct probe saw HTML, so it has nothing to offer.
+ */
+type Rendered = { status: 'content' | 'fallback'; render: () => Promise<string> };
+type Failed = { status: 'failed'; error: unknown };
+type Attempt = Rendered | { status: 'none' } | Failed;
 
 export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Promise<string> {
 	// A plain GET is enough when we only wait for DOMContentLoaded — one fetch, no browser.
@@ -17,36 +21,46 @@ export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Pr
 		return fetchSimple(worker, request);
 	}
 
-	const directPromise = fetchDirect(request.url, worker.env).then<DirectResult, DirectResult>(
-		(markdown) => ({ source: 'direct', ok: true, markdown }),
-		(error) => ({ source: 'direct', ok: false, error }),
-	);
-	const pagePromise = fetchPage(worker, request).then<PageResult, PageResult>(
-		async (page) => ({ source: 'page', ok: true, page, defuddle: await extractPage(page) }),
-		(error) => ({ source: 'page', ok: false, error }),
-	);
+	// Race a speculative direct fetch (documents: PDFs etc.) against Browser Rendering (HTML pages),
+	// so neither content type waits on the other's transport.
+	const direct = directAttempt(request.url, worker.env);
+	const page = pageAttempt(worker, request);
 
-	const first = await Promise.race([directPromise, pagePromise]);
+	const winner = await Promise.race([direct, page]);
+	if (winner.status === 'content') return winner.render();
 
-	if (first.source === 'direct') {
-		if (first.ok && first.markdown) return first.markdown;
-		const page = await pagePromise;
-		if (page.ok) return toMarkdown(page.page, page.defuddle, { env: worker.env, raw: request.raw });
-		throwMarkdownError(page.error, first.ok ? undefined : first.error);
+	// No confident winner: settle both, then prefer direct content over an empty page render.
+	const [pageResult, directResult] = await Promise.all([page, direct]);
+	if (directResult.status === 'content') return directResult.render();
+	if (pageResult.status !== 'failed') return pageResult.render();
+
+	if (directResult.status === 'failed') {
+		throw new AggregateError([pageResult.error, directResult.error], 'Failed to fetch Markdown.');
 	}
+	throw pageResult.error;
+}
 
-	if (first.ok) {
-		if (first.defuddle.wordCount > 0) {
-			return toMarkdown(first.page, first.defuddle, { env: worker.env, raw: request.raw });
-		}
-		const direct = await directPromise;
-		if (direct.ok && direct.markdown) return direct.markdown;
-		return toMarkdown(first.page, first.defuddle, { env: worker.env, raw: request.raw });
+async function directAttempt(url: string, env: Env): Promise<Attempt> {
+	try {
+		const markdown = await fetchDirect(url, env);
+		if (!markdown) return { status: 'none' };
+		return { status: 'content', render: async () => markdown };
+	} catch (error) {
+		return { status: 'failed', error };
 	}
+}
 
-	const direct = await directPromise;
-	if (direct.ok && direct.markdown) return direct.markdown;
-	throwMarkdownError(first.error, direct.ok ? undefined : direct.error);
+async function pageAttempt(worker: WorkerCtx, request: PageRequest): Promise<Rendered | Failed> {
+	try {
+		const page = await fetchPage(worker, request);
+		const defuddle = await extractPage(page);
+		return {
+			status: defuddle.wordCount > 0 ? 'content' : 'fallback',
+			render: () => toMarkdown(page, defuddle, { env: worker.env, raw: request.raw }),
+		};
+	} catch (error) {
+		return { status: 'failed', error };
+	}
 }
 
 async function fetchSimple(worker: WorkerCtx, request: PageRequest): Promise<string> {
@@ -59,9 +73,4 @@ async function fetchSimple(worker: WorkerCtx, request: PageRequest): Promise<str
 async function fetchPage(worker: WorkerCtx, request: FetchOptions): Promise<FetchedHtml> {
 	if (request.stealth) return stealthFetchHtml(worker, request);
 	return fetchHtml(worker, request);
-}
-
-function throwMarkdownError(primary: unknown, secondary: unknown | undefined): never {
-	if (secondary) throw new AggregateError([primary, secondary], 'Failed to fetch Markdown.');
-	throw primary;
 }
