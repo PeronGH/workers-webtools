@@ -1,4 +1,4 @@
-FROM cloakhq/cloakbrowser:0.3.28
+FROM cloakhq/cloakbrowser:0.4.7
 
 WORKDIR /srv
 COPY server.py .
