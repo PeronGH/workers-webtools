@@ -21,8 +21,7 @@ export { CloakBrowser, WebToolsMCP };
 const app = new Hono<{ Bindings: Env }>();
 
 app.use('*', async (c, next) => {
-	const provided =
-		c.req.header('authorization')?.replace(/^Bearer\s+/i, '') ?? new URL(c.req.url).searchParams.get('key');
+	const provided = c.req.header('authorization')?.replace(/^Bearer\s+/i, '') ?? new URL(c.req.url).searchParams.get('key');
 	if (provided !== c.env.API_KEY) {
 		throw new HTTPException(401, { message: 'Unauthorized' });
 	}

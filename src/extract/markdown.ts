@@ -29,11 +29,7 @@ function defuddleManglesUrl(url: URL): boolean {
 }
 
 /** Convert a settled page into Markdown via env.AI.toMarkdown. */
-export async function toMarkdown(
-	page: FetchedHtml,
-	defuddle: DefuddleResponse,
-	options: { env: Env; raw: boolean },
-): Promise<string> {
+export async function toMarkdown(page: FetchedHtml, defuddle: DefuddleResponse, options: { env: Env; raw: boolean }): Promise<string> {
 	const { env, raw } = options;
 	const pageUrl = new URL(page.finalUrl);
 	const useDefuddle = !raw && defuddle.wordCount > 0 && !defuddleManglesUrl(pageUrl);
