@@ -3,7 +3,7 @@ import { toMarkdown } from '../extract/markdown';
 import { fetchHtml } from '../render/cloudflare';
 import { stealthFetchHtml } from '../render/container';
 import { fetchDirect, fetchPageDirect } from '../render/direct';
-import type { FetchOptions, FetchedHtml, PageRequest, WorkerCtx } from '../types';
+import type { FetchOptions, FetchedHtml, PageRequest } from '../types';
 
 /**
  * Outcome of one competitor in the direct-vs-browser race.
@@ -15,16 +15,16 @@ type Rendered = { status: 'content' | 'fallback'; render: () => Promise<string> 
 type Failed = { status: 'failed'; error: unknown };
 type Attempt = Rendered | { status: 'none' } | Failed;
 
-export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Promise<string> {
+export async function fetchMarkdown(env: Env, request: PageRequest): Promise<string> {
 	// A plain GET is enough when we only wait for DOMContentLoaded — one fetch, no browser.
 	if (!request.stealth && request.waitUntil === 'domcontentloaded') {
-		return fetchSimple(worker, request);
+		return fetchSimple(env, request);
 	}
 
 	// Race a speculative direct fetch (documents: PDFs etc.) against Browser Rendering (HTML pages),
 	// so neither content type waits on the other's transport.
-	const direct = directAttempt(request.url, worker.env);
-	const page = pageAttempt(worker, request);
+	const direct = directAttempt(env, request.url);
+	const page = pageAttempt(env, request);
 
 	const winner = await Promise.race([direct, page]);
 	if (winner.status === 'content') return winner.render();
@@ -40,7 +40,7 @@ export async function fetchMarkdown(worker: WorkerCtx, request: PageRequest): Pr
 	throw pageResult.error;
 }
 
-async function directAttempt(url: string, env: Env): Promise<Attempt> {
+async function directAttempt(env: Env, url: string): Promise<Attempt> {
 	try {
 		const markdown = await fetchDirect(url, env);
 		if (!markdown) return { status: 'none' };
@@ -50,27 +50,27 @@ async function directAttempt(url: string, env: Env): Promise<Attempt> {
 	}
 }
 
-async function pageAttempt(worker: WorkerCtx, request: PageRequest): Promise<Rendered | Failed> {
+async function pageAttempt(env: Env, request: PageRequest): Promise<Rendered | Failed> {
 	try {
-		const page = await fetchPage(worker, request);
+		const page = await fetchPage(env, request);
 		const defuddle = await extractPage(page);
 		return {
 			status: defuddle.wordCount > 0 ? 'content' : 'fallback',
-			render: () => toMarkdown(page, defuddle, { env: worker.env, raw: request.raw }),
+			render: () => toMarkdown(page, defuddle, { env, raw: request.raw }),
 		};
 	} catch (error) {
 		return { status: 'failed', error };
 	}
 }
 
-async function fetchSimple(worker: WorkerCtx, request: PageRequest): Promise<string> {
-	const result = await fetchPageDirect(request.url, worker.env);
+async function fetchSimple(env: Env, request: PageRequest): Promise<string> {
+	const result = await fetchPageDirect(request.url, env);
 	if (result.kind === 'markdown') return result.markdown;
 	const defuddle = await extractPage(result.page);
-	return toMarkdown(result.page, defuddle, { env: worker.env, raw: request.raw });
+	return toMarkdown(result.page, defuddle, { env, raw: request.raw });
 }
 
-async function fetchPage(worker: WorkerCtx, request: FetchOptions): Promise<FetchedHtml> {
-	if (request.stealth) return stealthFetchHtml(worker, request);
-	return fetchHtml(worker, request);
+async function fetchPage(env: Env, request: FetchOptions): Promise<FetchedHtml> {
+	if (request.stealth) return stealthFetchHtml(env, request);
+	return fetchHtml(env, request);
 }

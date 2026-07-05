@@ -1,5 +1,3 @@
-export type WorkerCtx = { env: Env; ctx?: ExecutionContext };
-
 export type WaitUntil = 'domcontentloaded' | 'networkidle' | 'settled';
 export type RenderOptions = { url: string; waitUntil: WaitUntil };
 export type FetchOptions = RenderOptions & { stealth: boolean };

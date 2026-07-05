@@ -1,6 +1,6 @@
 import { Container, getContainer } from '@cloudflare/containers';
 import { SETTLED_EXTRA_MS } from '../constants';
-import type { FetchedHtml, RenderOptions, SnapshotData, WaitUntil, WorkerCtx } from '../types';
+import type { FetchedHtml, RenderOptions, SnapshotData, WaitUntil } from '../types';
 
 /** Single shared CloakBrowser instance. */
 export class CloakBrowser extends Container {
@@ -53,7 +53,7 @@ function waitOptions(waitUntil: WaitUntil): { waitUntil: RpcWaitUntil; waitForTi
 	return { waitUntil: 'domcontentloaded', waitForTimeoutMs: 0 };
 }
 
-export async function stealthFetchHtml({ env }: WorkerCtx, request: RenderOptions): Promise<FetchedHtml> {
+export async function stealthFetchHtml(env: Env, request: RenderOptions): Promise<FetchedHtml> {
 	const data = await rpc(env, '/fetch', rpcBody(request));
 	return {
 		html: data.html,
@@ -61,7 +61,7 @@ export async function stealthFetchHtml({ env }: WorkerCtx, request: RenderOption
 	};
 }
 
-export async function stealthFetchSnapshot({ env }: WorkerCtx, request: RenderOptions): Promise<SnapshotData> {
+export async function stealthFetchSnapshot(env: Env, request: RenderOptions): Promise<SnapshotData> {
 	const data = await rpc(env, '/snapshot', rpcBody(request));
 	return {
 		html: data.html,

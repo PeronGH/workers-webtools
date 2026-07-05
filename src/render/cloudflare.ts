@@ -1,9 +1,9 @@
 import { SETTLED_EXTRA_MS } from '../constants';
-import type { FetchedHtml, RenderOptions, WaitUntil, WorkerCtx } from '../types';
+import type { FetchedHtml, RenderOptions, WaitUntil } from '../types';
 
 const GOTO_TIMEOUT_MS = 15_000;
 
-export async function fetchHtml({ env }: WorkerCtx, request: RenderOptions): Promise<FetchedHtml> {
+export async function fetchHtml(env: Env, request: RenderOptions): Promise<FetchedHtml> {
 	const response = await env.BROWSER.quickAction('content', {
 		url: request.url,
 		...waitOptions(request.waitUntil),

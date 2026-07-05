@@ -1,11 +1,11 @@
-import type { PageRequest, WorkerCtx } from '../types';
+import type { PageRequest } from '../types';
 import { fetchMarkdown } from './markdown';
 
 const MODEL = '@cf/moonshotai/kimi-k2.6';
 
-export async function askAboutPage(worker: WorkerCtx, request: PageRequest, prompt: string): Promise<string> {
-	const content = await fetchMarkdown(worker, request);
-	const response = await worker.env.AI.run(MODEL, {
+export async function askAboutPage(env: Env, request: PageRequest, prompt: string): Promise<string> {
+	const content = await fetchMarkdown(env, request);
+	const response = await env.AI.run(MODEL, {
 		messages: [
 			{
 				role: 'system',

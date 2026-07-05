@@ -37,7 +37,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			},
 			async ({ url, stealth, raw, waitUntil }) => {
 				const request = rewritePageRequest({ url, stealth, raw, waitUntil });
-				const markdown = await fetchMarkdown({ env: this.env }, request);
+				const markdown = await fetchMarkdown(this.env, request);
 				return { content: [{ type: 'text', text: markdown }] };
 			},
 		);
@@ -53,7 +53,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			},
 			async ({ url }) => {
 				const request = rewritePageRequest({ url, ...STEALTH_DEFAULTS });
-				const png = await fetchScreenshot({ env: this.env }, request);
+				const png = await fetchScreenshot(this.env, request);
 				const data = Buffer.from(png).toString('base64');
 				return { content: [{ type: 'image', data, mimeType: 'image/png' }] };
 			},
@@ -69,7 +69,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			},
 			async ({ url }) => {
 				const request = rewritePageRequest({ url, ...STEALTH_DEFAULTS });
-				const { markdown, png } = await fetchSnapshot({ env: this.env }, request);
+				const { markdown, png } = await fetchSnapshot(this.env, request);
 				return {
 					content: [
 						{ type: 'text', text: markdown },
@@ -93,7 +93,7 @@ export class WebToolsMCP extends McpAgent<Env> {
 			},
 			async ({ url, prompt }) => {
 				const request = rewritePageRequest({ url, ...STEALTH_DEFAULTS });
-				const answer = await askAboutPage({ env: this.env }, request, prompt);
+				const answer = await askAboutPage(this.env, request, prompt);
 				return { content: [{ type: 'text', text: answer }] };
 			},
 		);
