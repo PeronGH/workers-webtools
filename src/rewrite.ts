@@ -31,10 +31,12 @@ const RULES: readonly Rule[] = [
 		url: (url) => (url.hostname = 'nitter.tiekoetter.com'),
 	},
 	{
-		// eddrit mirrors Reddit's URL scheme; it sits behind Anubis, which only the stealth browser clears.
+		// eddrit mirrors Reddit's URL scheme; it sits behind Anubis, which only the stealth browser
+		// clears (the container waits out the challenge itself, so DOM-ready is safe). It is fully
+		// server-rendered, and Defuddle would drop the comment tree, so raw at DOM-ready is optimal.
 		match: (url) => /(^|\.)reddit\.com$/.test(url.hostname),
 		url: (url) => (url.hostname = 'eddrit.com'),
-		options: { stealth: true },
+		options: { stealth: true, raw: true, waitUntil: 'domcontentloaded' },
 	},
 ];
 
