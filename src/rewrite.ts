@@ -15,6 +15,19 @@ function removeSuffix(value: string, suffix: string): string {
 	return value.endsWith(suffix) ? value.slice(0, -suffix.length) : value;
 }
 
+const STACKEXCHANGE_HOSTS = new Set([
+	'stackoverflow.com',
+	'serverfault.com',
+	'superuser.com',
+	'askubuntu.com',
+	'mathoverflow.net',
+	'stackapps.com',
+]);
+
+function isStackExchange(hostname: string): boolean {
+	return STACKEXCHANGE_HOSTS.has(hostname) || hostname.endsWith('.stackexchange.com');
+}
+
 const RULES: readonly Rule[] = [
 	{
 		match: (url) => url.hostname === 'developers.cloudflare.com' && !/\.[a-z]+$/.test(url.pathname),
@@ -34,9 +47,25 @@ const RULES: readonly Rule[] = [
 		// eddrit mirrors Reddit's URL scheme; it sits behind Anubis, which only the stealth browser
 		// clears (the container waits out the challenge itself, so DOM-ready is safe). It is fully
 		// server-rendered, and Defuddle would drop the comment tree, so raw at DOM-ready is optimal.
-		match: (url) => /(^|\.)reddit\.com$/.test(url.hostname),
+		match: (url) => /(^|\.)(reddit|eddrit)\.com$/.test(url.hostname),
 		url: (url) => (url.hostname = 'eddrit.com'),
 		options: { stealth: true, raw: true, waitUntil: 'domcontentloaded' },
+	},
+	{
+		// Stack Exchange hosts share the same Q&A engine, so Defuddle mangles question pages
+		// identically across them. /q/ and /a/ are share links that redirect to /questions/.
+		match: (url) => isStackExchange(url.hostname) && /^\/(questions|q|a)\/\d+(\/|$)/.test(url.pathname),
+		options: { raw: true },
+	},
+	{
+		// Defuddle mangles XenForo thread pages.
+		match: (url) => url.hostname === 'xdaforums.com' && url.pathname.startsWith('/t/'),
+		options: { raw: true },
+	},
+	{
+		// Defuddle mangles GitHub issue pages.
+		match: (url) => url.hostname === 'github.com' && /^\/[^/]+\/[^/]+\/issues\/\d+/.test(url.pathname),
+		options: { raw: true },
 	},
 ];
 
