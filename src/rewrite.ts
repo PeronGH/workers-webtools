@@ -42,6 +42,7 @@ const RULES: readonly Rule[] = [
 	{
 		match: (url) => ['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'].includes(url.hostname),
 		url: (url) => (url.hostname = 'nitter.us.catsarch.com'),
+		options: { stealth: true },
 	},
 	{
 		// eddrit mirrors Reddit's URL scheme; it sits behind Anubis, which only the stealth browser
