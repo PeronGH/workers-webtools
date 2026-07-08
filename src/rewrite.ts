@@ -40,7 +40,7 @@ const RULES: readonly Rule[] = [
 		url: (url) => (url.pathname = `/tutorials/data${removeSuffix(url.pathname, '/').toLowerCase()}.md`),
 	},
 	{
-		match: (url) => ['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'].includes(url.hostname),
+		match: (url) => ['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com', 'nitter.us.catsarch.com'].includes(url.hostname),
 		url: (url) => (url.hostname = 'nitter.us.catsarch.com'),
 		options: { stealth: true },
 	},
