@@ -7,11 +7,17 @@ export async function fetchHtml(env: Env, request: RenderOptions): Promise<Fetch
 	const response = await env.BROWSER.quickAction('content', {
 		url: request.url,
 		...waitOptions(request.waitUntil),
-		rejectResourceTypes: ['image', 'media', 'font', 'texttrack', 'prefetch'],
+		// The serialized DOM carries everything markdown extraction needs, so resource bytes never
+		// influence the output; blocking them lets networkidle0 settle sooner. Scripts and the
+		// transports feeding them (xhr, fetch, preflight) must stay.
+		rejectResourceTypes: ['stylesheet', 'image', 'font', 'media', 'manifest', 'texttrack', 'prefetch', 'ping', 'cspviolationreport'],
+		// Awaited-event timeouts serialize whatever the page had at the cap instead of failing the
+		// request — the same best-effort capture the stealth container uses.
+		bestAttempt: true,
 	});
 	if (!response.ok) {
-		// Hard failure by design, unlike the stealth container's best-effort capture:
-		// surfacing the error lets the client retry with stealth=true.
+		// bestAttempt covers goto/wait timeouts, so a !ok response is a genuine API failure
+		// (rate limit, bad input): surfacing it lets the client retry with stealth=true.
 		throw new Error(`Browser Rendering content failed (${response.status}): ${await response.text()}`);
 	}
 	return {
