@@ -30,12 +30,6 @@ function isStackExchange(hostname: string): boolean {
 
 const RULES: readonly Rule[] = [
 	{
-		match: (url) => url.hostname === 'developers.cloudflare.com' && !/\.[a-z]+$/.test(url.pathname),
-		url: (url) => {
-			url.pathname = url.pathname.endsWith('/') ? `${url.pathname}index.md` : `${url.pathname}/index.md`;
-		},
-	},
-	{
 		match: (url) => url.hostname === 'developer.apple.com' && url.pathname.startsWith('/documentation/'),
 		url: (url) => (url.pathname = `/tutorials/data${removeSuffix(url.pathname, '/').toLowerCase()}.md`),
 	},
