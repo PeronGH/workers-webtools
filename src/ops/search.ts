@@ -4,7 +4,7 @@ export type SearchResult = {
 	snippet: string;
 };
 
-const SEARXNG_URL = 'https://search.banned.dynv6.net/search';
+const SEARXNG_URL = 'https://workers-searxng.banned.workers.dev/search';
 
 /** Fields we surface from a SearXNG JSON result. */
 type SearxngResult = { title?: string; url?: string; content?: string };
