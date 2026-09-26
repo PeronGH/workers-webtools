@@ -1,8 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/server";
-import { fetchAsMarkdown, formatSearchResults, search } from "@peron_js/web-cli";
+import { fetchContent, formatSearchResults, search } from "@peron_js/web-cli";
 import { createFetcher } from "@pixel/socket-fetch";
 import { createMcpHandler } from "agents/mcp/server";
 import { connect } from "cloudflare:sockets";
+import { Buffer } from "node:buffer";
 import { z } from "zod";
 
 const socketFetch = createFetcher({
@@ -58,7 +59,7 @@ function createServer() {
 		{
 			title: "Web Fetch",
 			description:
-				"Fetch a URL and return its content as Markdown. Pages that render their content with JavaScript come back empty from a direct fetch; retry those with render: true.",
+				"Fetch a URL and return its content: web pages as Markdown, other text as is, and images as images. Pages that render their content with JavaScript come back empty from a direct fetch; retry those with render: true.",
 			inputSchema: {
 				url: z.string().describe("The URL to fetch"),
 				render: z.boolean().optional().describe("Render the page in a headless browser (slow)"),
@@ -67,8 +68,12 @@ function createServer() {
 			annotations: { readOnlyHint: true, openWorldHint: true },
 		},
 		async ({ url, render, raw }, ctx) => {
-			const text = await fetchAsMarkdown(url, { render, raw }, { fetch: directFetch, signal: ctx.mcpReq.signal });
-			return { content: [{ type: "text", text }] };
+			const page = await fetchContent(url, { render, raw }, { fetch: directFetch, signal: ctx.mcpReq.signal });
+			if (page.type === "image") {
+				const data = Buffer.from(page.data).toString("base64");
+				return { content: [{ type: "image", data, mimeType: page.mimeType }] };
+			}
+			return { content: [{ type: "text", text: page.text }] };
 		},
 	);
 
