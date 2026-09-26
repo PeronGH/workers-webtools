@@ -6,7 +6,7 @@
       "name": "workers-webtools",
       "dependencies": {
         "@modelcontextprotocol/server": "2.0.0",
-        "@peron_js/web-cli": "^2.2.0",
+        "@peron_js/web-cli": "^2.2.1",
         "@pixel/socket-fetch": "npm:@jsr/pixel__socket-fetch@^0.2.0",
         "agents": "^0.24.0",
         "zod": "^4.6.5",
@@ -217,7 +217,7 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.151.0", "", {}, "sha512-J1yXrIlNDZVzE3ada310xeAw7nH8yCAyLPuUIsjKatFPmfn5bS1oW+cM+QsGOtVWd5nhSpbwZWx/rue+r5Z+PA=="],
 
-    "@peron_js/web-cli": ["@peron_js/web-cli@2.2.0", "", { "dependencies": { "citty": "^0.2.2", "defuddle": "^0.19.2", "linkedom": "^0.18.13", "mathml-to-latex": "^1.8.0", "turndown": "^7.2.4" }, "bin": { "web": "dist/index.js" } }, "sha512-FPjse8VQjGm9hhvB3HN94TdvxCdrDibKFePr4z8YSHGMB8nztpoHyx+YwPzhtIA8lTd43a3D9fmF/jZEv4Zwjg=="],
+    "@peron_js/web-cli": ["@peron_js/web-cli@2.2.1", "", { "dependencies": { "citty": "^0.2.2", "defuddle": "^0.19.2", "linkedom": "^0.18.13", "mathml-to-latex": "^1.8.0", "turndown": "^7.2.4" }, "bin": { "web": "dist/index.js" } }, "sha512-ySg5mxBF659U3DLRdnLop9ujoLyhg0ptgUgUYRUOHbmzaUIRem2s/S7waBfYoPaxTLfF98N1HYUIcKhXD/b8lA=="],
 
     "@pixel/socket-fetch": ["@jsr/pixel__socket-fetch@0.2.0", "https://npm.jsr.io/~/11/@jsr/pixel__socket-fetch/0.2.0.tgz", {}, "sha512-ZHZC5QDqhar35EOXCMLj67HWDGvxsv6NjxSshANx8Pme0vwDFSTITjSb0cbhu4nIendhgb7oZxcj+a/H0igJHw=="],
 
