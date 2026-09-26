@@ -62,7 +62,7 @@ function createServer() {
 			annotations: { readOnlyHint: true, openWorldHint: true },
 		},
 		async ({ query, pages }, ctx) => {
-			const results = await search(query, { pages }, { signal: ctx.mcpReq.signal });
+			const results = await search(query, { pages }, { fetch: directFetch, signal: ctx.mcpReq.signal });
 			const text = results.length === 0 ? `No results found for: ${query}` : formatSearchResults(results);
 			return { content: [{ type: "text", text }] };
 		},
@@ -82,11 +82,7 @@ function createServer() {
 			annotations: { readOnlyHint: true, openWorldHint: true },
 		},
 		async ({ url, render, raw }, ctx) => {
-			const text = await fetchAsMarkdown(
-				url,
-				{ render, raw },
-				{ fetch: render ? undefined : directFetch, signal: ctx.mcpReq.signal },
-			);
+			const text = await fetchAsMarkdown(url, { render, raw }, { fetch: directFetch, signal: ctx.mcpReq.signal });
 			return { content: [{ type: "text", text }] };
 		},
 	);
