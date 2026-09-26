@@ -7,6 +7,7 @@
 	"name": "webtools",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-09-25",
+	"compatibility_flags": ["nodejs_compat"],
 	"observability": {
 		"enabled": true
 	},
