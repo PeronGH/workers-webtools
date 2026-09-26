@@ -10,6 +10,29 @@ const socketFetch = createFetcher({
 	connectTls: (address) => connect(address, { secureTransport: "on", allowHalfOpen: false }),
 });
 
+// The edge reports this for every destination it refuses to dial. Cloudflare
+// IPs are one case, but localhost and private ranges share the message, so the
+// fallback fires for all of them and not only Cloudflare.
+const REFUSED_ADDRESS = "cannot connect to the specified address";
+
+// socket-fetch wraps socket errors as `TypeError("fetch failed", { cause })`.
+function isRefusedAddress(error: unknown): boolean {
+	for (let e = error; e !== undefined; e = e instanceof Error ? e.cause : undefined) {
+		const message = e instanceof Error ? e.message : String(e);
+		if (message.includes(REFUSED_ADDRESS)) return true;
+	}
+	return false;
+}
+
+const directFetch: typeof fetch = async (input, init) => {
+	try {
+		return await socketFetch(input, init);
+	} catch (error) {
+		if (!isRefusedAddress(error)) throw error;
+		return fetch(input, init);
+	}
+};
+
 function createServer() {
 	const server = new McpServer(
 		{ name: "webtools", version: "1.0.0" },
@@ -56,7 +79,7 @@ function createServer() {
 			const text = await fetchAsMarkdown(
 				url,
 				{ render, raw },
-				{ fetch: render ? undefined : socketFetch, signal: ctx.mcpReq.signal },
+				{ fetch: render ? undefined : directFetch, signal: ctx.mcpReq.signal },
 			);
 			return { content: [{ type: "text", text }] };
 		},
