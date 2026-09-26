@@ -51,12 +51,18 @@ function createServer() {
 			description: "Search the web. Returns a numbered Markdown list of results with title, URL, and snippet.",
 			inputSchema: {
 				query: z.string().describe("The search query"),
-				limit: z.number().int().max(120).default(20).describe("Maximum number of results to return, defaults to 20"),
+				pages: z
+					.number()
+					.int()
+					.min(1)
+					.max(6)
+					.default(1)
+					.describe("Pages of 20 results to return, defaults to 1; 6 returns all 120"),
 			},
 			annotations: { readOnlyHint: true, openWorldHint: true },
 		},
-		async ({ query, limit }, ctx) => {
-			const results = await search(query, { limit }, { signal: ctx.mcpReq.signal });
+		async ({ query, pages }, ctx) => {
+			const results = await search(query, { pages }, { signal: ctx.mcpReq.signal });
 			const text = results.length === 0 ? `No results found for: ${query}` : formatSearchResults(results);
 			return { content: [{ type: "text", text }] };
 		},

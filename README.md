@@ -4,7 +4,7 @@ A stateless [MCP](https://modelcontextprotocol.io/) server on Cloudflare Workers
 
 | Tool | Parameters | Returns |
 |------|------------|---------|
-| `web_search` | `query`, `limit` (default 20, max 120) | Numbered Markdown list of results with title, URL, and snippet |
+| `web_search` | `query`, `pages` of 20 results (default 1, max 6) | Numbered Markdown list of results with title, URL, and snippet |
 | `web_fetch` | `url`, `render` (headless browser), `raw` (whole page) | Page content as Markdown |
 
 The endpoint has no authentication.
