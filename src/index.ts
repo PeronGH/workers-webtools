@@ -1,7 +1,14 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { fetchAsMarkdown, formatSearchResults, search } from "@peron_js/web-cli";
+import { createFetcher } from "@pixel/socket-fetch";
 import { createMcpHandler } from "agents/mcp/server";
+import { connect } from "cloudflare:sockets";
 import { z } from "zod";
+
+const socketFetch = createFetcher({
+	connect,
+	connectTls: (address) => connect(address, { secureTransport: "on", allowHalfOpen: false }),
+});
 
 function createServer() {
 	const server = new McpServer(
@@ -46,7 +53,11 @@ function createServer() {
 			annotations: { readOnlyHint: true, openWorldHint: true },
 		},
 		async ({ url, render, raw }, ctx) => {
-			const text = await fetchAsMarkdown(url, { render, raw }, { signal: ctx.mcpReq.signal });
+			const text = await fetchAsMarkdown(
+				url,
+				{ render, raw },
+				{ fetch: render ? undefined : socketFetch, signal: ctx.mcpReq.signal },
+			);
 			return { content: [{ type: "text", text }] };
 		},
 	);
