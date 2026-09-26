@@ -15,7 +15,7 @@
 	},
 	"dependencies": {
 		"@modelcontextprotocol/server": "2.0.0",
-		"@peron_js/web-cli": "^1.0.4",
+		"@peron_js/web-cli": "^1.0.5",
 		"agents": "^0.24.0",
 		"zod": "^4.6.5"
 	}

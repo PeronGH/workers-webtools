@@ -6,7 +6,7 @@
       "name": "workers-webtools",
       "dependencies": {
         "@modelcontextprotocol/server": "2.0.0",
-        "@peron_js/web-cli": "^1.0.4",
+        "@peron_js/web-cli": "^1.0.5",
         "agents": "^0.24.0",
         "zod": "^4.6.5",
       },
@@ -216,7 +216,7 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.151.0", "", {}, "sha512-J1yXrIlNDZVzE3ada310xeAw7nH8yCAyLPuUIsjKatFPmfn5bS1oW+cM+QsGOtVWd5nhSpbwZWx/rue+r5Z+PA=="],
 
-    "@peron_js/web-cli": ["@peron_js/web-cli@1.0.4", "", { "dependencies": { "citty": "^0.2.2", "defuddle": "^0.19.2", "linkedom": "^0.18.13", "mathml-to-latex": "^1.8.0", "turndown": "^7.2.4", "undici": "^8.10.0" }, "bin": { "web": "dist/index.js" } }, "sha512-u1TXXJkl2mcdpA81Lb9FjV70E862nWCpHv2TsN1XLN6THGIhq7+Uk7ahYsehl1eCsJQ/9p17zCnkPMEMahUoyw=="],
+    "@peron_js/web-cli": ["@peron_js/web-cli@1.0.5", "", { "dependencies": { "citty": "^0.2.2", "defuddle": "^0.19.2", "linkedom": "^0.18.13", "mathml-to-latex": "^1.8.0", "turndown": "^7.2.4", "undici": "^8.10.0" }, "bin": { "web": "dist/index.js" } }, "sha512-O0oFq2r6YOUBmzIee9fxjF2WaUHe0LoLOgLYes/kXGv7PgwfjAuEa/8lKcC7AQhso96uUa72vEmQWAPcg344rQ=="],
 
     "@poppinss/colors": ["@poppinss/colors@4.1.6", "", { "dependencies": { "kleur": "^4.1.5" } }, "sha512-H9xkIdFswbS8n1d6vmRd8+c10t2Qe+rZITbbDHHkQixH5+2x1FDGmi/0K+WgWiqQFKPSlIYB7jlH6Kpfn6Fleg=="],
 
