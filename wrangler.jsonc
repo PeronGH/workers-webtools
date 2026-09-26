@@ -8,6 +8,12 @@
 	"main": "src/index.ts",
 	"compatibility_date": "2026-09-25",
 	"compatibility_flags": ["nodejs_compat"],
+	// turndown's `browser` field swaps in a build that parses HTML via the global `document`, which Workers lack,
+	// and stubs out domino, the DOM its Node build parses with.
+	"alias": {
+		"turndown": "./node_modules/turndown/lib/turndown.cjs.js",
+		"@mixmark-io/domino": "./node_modules/@mixmark-io/domino/lib/index.js"
+	},
 	"observability": {
 		"enabled": true
 	},
