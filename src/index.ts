@@ -64,12 +64,12 @@ function createServer() {
 			inputSchema: {
 				url: z.string().describe("The URL to fetch"),
 				render: z.boolean().optional().describe("Render the page in a headless browser (slow)"),
-				raw: z.boolean().optional().describe("Convert the whole page instead of extracting the main content"),
 			},
 			annotations: { readOnlyHint: true, openWorldHint: true },
 		},
-		async ({ url, render, raw }, ctx) => {
-			const page = await fetchContent(url, { render, raw }, { fetch: directFetch, signal: ctx.mcpReq.signal });
+		async ({ url, render }, ctx) => {
+			// Defuddle's main-content extraction exceeds the Workers Free CPU limit.
+			const page = await fetchContent(url, { render, raw: true }, { fetch: directFetch, signal: ctx.mcpReq.signal });
 			if (page.type === "image") {
 				const data = Buffer.from(page.data).toString("base64");
 				return { content: [{ type: "image", data, mimeType: page.mimeType }] };
