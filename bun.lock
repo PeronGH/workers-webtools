@@ -6,7 +6,7 @@
       "name": "workers-webtools",
       "dependencies": {
         "@modelcontextprotocol/server": "2.0.0",
-        "@peron_js/web-cli": "^2.3.1",
+        "@peron_js/web-cli": "^2.4.0",
         "@pixel/socket-fetch": "npm:@jsr/pixel__socket-fetch@^0.2.0",
         "agents": "^0.24.0",
         "zod": "^4.6.5",
@@ -217,7 +217,7 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.151.0", "", {}, "sha512-J1yXrIlNDZVzE3ada310xeAw7nH8yCAyLPuUIsjKatFPmfn5bS1oW+cM+QsGOtVWd5nhSpbwZWx/rue+r5Z+PA=="],
 
-    "@peron_js/web-cli": ["@peron_js/web-cli@2.3.1", "", { "dependencies": { "citty": "^0.2.2", "defuddle": "^0.19.4", "linkedom": "^0.18.13", "turndown": "^7.2.4" }, "bin": { "web": "dist/index.js" } }, "sha512-wRpzJt5hHhm2Iq878nG/Jwz4EF/6cCsal/ahLadQf66ihMck+C8cRgmEExQ1Nc4VngiWrVXnEqZrXgKDONBZug=="],
+    "@peron_js/web-cli": ["@peron_js/web-cli@2.4.0", "", { "dependencies": { "citty": "^0.2.2", "defuddle": "^0.19.4", "linkedom": "^0.18.13", "turndown": "^7.2.4" }, "bin": { "web": "dist/index.js" } }, "sha512-4/JhiBEJ/YtoDSKs00w2uPftGVp2BpezkB7RetujaVpNEpScl8/DIanfib/bPehT6iK5LStDELbqjmhN2U6+qw=="],
 
     "@pixel/socket-fetch": ["@jsr/pixel__socket-fetch@0.2.0", "https://npm.jsr.io/~/11/@jsr/pixel__socket-fetch/0.2.0.tgz", {}, "sha512-ZHZC5QDqhar35EOXCMLj67HWDGvxsv6NjxSshANx8Pme0vwDFSTITjSb0cbhu4nIendhgb7oZxcj+a/H0igJHw=="],
 
