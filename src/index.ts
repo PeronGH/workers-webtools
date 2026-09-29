@@ -1,5 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/server";
-import { fetchContent, formatSearchResults, type PdfToMarkdown, search } from "@peron_js/web-cli";
+import {
+	type ConvertContext,
+	fetchContent,
+	formatSearchResults,
+	type HtmlToMarkdown,
+	type PdfToMarkdown,
+	search,
+} from "@peron_js/web-cli";
 import { createFetcher } from "@pixel/socket-fetch";
 import { createMcpHandler } from "agents/mcp/server";
 import { connect } from "cloudflare:sockets";
@@ -20,12 +27,26 @@ const directFetch: typeof fetch = async (input, init) => {
 	}
 };
 
-const pdfToMarkdown: PdfToMarkdown = async (pdf, { url }) => {
-	const blob = new Blob([pdf as Uint8Array<ArrayBuffer>], { type: "application/pdf" });
-	const result = await env.AI.toMarkdown({ name: "document.pdf", blob });
+async function aiToMarkdown(
+	document: MarkdownDocument,
+	{ url }: ConvertContext,
+	conversionOptions?: ConversionOptions,
+): Promise<string> {
+	const result = await env.AI.toMarkdown(document, { conversionOptions });
 	if (result.format === "error") throw new Error(`Cannot convert ${url}: ${result.error}`);
 	return result.data;
-};
+}
+
+const htmlToMarkdown: HtmlToMarkdown = (html, context) =>
+	aiToMarkdown({ name: "page.html", blob: new Blob([html], { type: "text/html" }) }, context, {
+		html: { hostname: context.url },
+	});
+
+const pdfToMarkdown: PdfToMarkdown = (pdf, context) =>
+	aiToMarkdown(
+		{ name: "document.pdf", blob: new Blob([pdf as Uint8Array<ArrayBuffer>], { type: "application/pdf" }) },
+		context,
+	);
 
 function createServer() {
 	const server = new McpServer(
@@ -75,11 +96,10 @@ function createServer() {
 			annotations: { readOnlyHint: true, openWorldHint: true },
 		},
 		async ({ url, render }, ctx) => {
-			// Defuddle's main-content extraction exceeds the Workers Free CPU limit.
 			const page = await fetchContent(
 				url,
-				{ render, raw: true },
-				{ fetch: directFetch, signal: ctx.mcpReq.signal, pdfToMarkdown },
+				{ render },
+				{ fetch: directFetch, signal: ctx.mcpReq.signal, htmlToMarkdown, pdfToMarkdown },
 			);
 			if (page.type === "image") {
 				const data = Buffer.from(page.data).toString("base64");
