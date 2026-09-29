@@ -1,8 +1,16 @@
 import { McpServer } from "@modelcontextprotocol/server";
-import { fetchContent, formatSearchResults, search } from "@peron_js/web-cli";
+import {
+	type ConvertContext,
+	fetchContent,
+	formatSearchResults,
+	type HtmlToMarkdown,
+	type PdfToMarkdown,
+	search,
+} from "@peron_js/web-cli";
 import { createFetcher } from "@pixel/socket-fetch";
 import { createMcpHandler } from "agents/mcp/server";
 import { connect } from "cloudflare:sockets";
+import { env } from "cloudflare:workers";
 import { Buffer } from "node:buffer";
 import { z } from "zod";
 
@@ -19,6 +27,27 @@ const directFetch: typeof fetch = async (input, init) => {
 	}
 };
 
+async function aiToMarkdown(
+	document: MarkdownDocument,
+	{ url }: ConvertContext,
+	conversionOptions?: ConversionOptions,
+): Promise<string> {
+	const result = await env.AI.toMarkdown(document, { conversionOptions });
+	if (result.format === "error") throw new Error(`Cannot convert ${url}: ${result.error}`);
+	return result.data;
+}
+
+const htmlToMarkdown: HtmlToMarkdown = (html, context) =>
+	aiToMarkdown({ name: "page.html", blob: new Blob([html], { type: "text/html" }) }, context, {
+		html: { hostname: context.url },
+	});
+
+const pdfToMarkdown: PdfToMarkdown = (pdf, context) =>
+	aiToMarkdown(
+		{ name: "document.pdf", blob: new Blob([pdf as Uint8Array<ArrayBuffer>], { type: "application/pdf" }) },
+		context,
+	);
+
 function createServer() {
 	const server = new McpServer(
 		{ name: "webtools", version: "1.0.0" },
@@ -26,7 +55,7 @@ function createServer() {
 			instructions: [
 				"Use web_search to check anything that may be outdated or uncertain, then read the promising results with web_fetch.",
 				"Use web_fetch instead of curl to read a web page, because it returns readable Markdown instead of raw HTML.",
-				"Use curl instead of web_fetch to download binary files other than images, because web_fetch rejects them.",
+				"Use curl instead of web_fetch to download binary files other than images and PDFs, because web_fetch rejects them.",
 			].join("\n"),
 		},
 	);
@@ -60,7 +89,7 @@ function createServer() {
 		{
 			title: "Web Fetch",
 			description:
-				"Fetch a URL and return its content: web pages as Markdown, other text as is, and images as images. Pages that render their content with JavaScript come back empty from a direct fetch; retry those with render: true.",
+				"Fetch a URL and return its content: web pages and PDFs as Markdown, other text as is, and images as images. Pages that render their content with JavaScript come back empty from a direct fetch; retry those with render: true.",
 			inputSchema: {
 				url: z.string().describe("The URL to fetch"),
 				render: z.boolean().optional().describe("Render the page in a headless browser (slow)"),
@@ -68,8 +97,11 @@ function createServer() {
 			annotations: { readOnlyHint: true, openWorldHint: true },
 		},
 		async ({ url, render }, ctx) => {
-			// Defuddle's main-content extraction exceeds the Workers Free CPU limit.
-			const page = await fetchContent(url, { render, raw: true }, { fetch: directFetch, signal: ctx.mcpReq.signal });
+			const page = await fetchContent(
+				url,
+				{ render },
+				{ fetch: directFetch, signal: ctx.mcpReq.signal, htmlToMarkdown, pdfToMarkdown },
+			);
 			if (page.type === "image") {
 				const data = Buffer.from(page.data).toString("base64");
 				return { content: [{ type: "image", data, mimeType: page.mimeType }] };
