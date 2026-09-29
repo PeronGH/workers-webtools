@@ -54,8 +54,7 @@ function createServer() {
 		{
 			instructions: [
 				"Use web_search to check anything that may be outdated or uncertain, then read the promising results with web_fetch.",
-				"Use web_fetch instead of curl to read a web page, because it returns readable Markdown instead of raw HTML.",
-				"Use curl instead of web_fetch to download binary files other than images and PDFs, because web_fetch rejects them.",
+				"Use web_fetch instead of curl to read web pages, images, and PDFs, because it returns web pages and PDFs as readable Markdown and images as images.",
 			].join("\n"),
 		},
 	);
