@@ -13,9 +13,11 @@ const REMOVED_ELEMENTS = [
 	// Navigation and sidebars that aren't <nav>.
 	'[role="navigation"]',
 	'aside',
+	// Structured data for search engines, which the conversion keeps verbatim.
+	'script[type="application/ld+json" i]',
 ];
 
-/** HTML stripped of hidden content and non-<nav> navigation, ready for conversion. */
+/** HTML stripped of hidden content, non-<nav> navigation, and JSON-LD, ready for conversion. */
 export interface CleanedHtml {
 	html: string;
 	/**
