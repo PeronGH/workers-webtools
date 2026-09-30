@@ -46,6 +46,21 @@ const URL_REWRITES: readonly UrlRewrite[] = [
 		// Same Anubis gate as Nitter.
 		fetchAs: 'curl',
 	},
+	{
+		// The REST HTML is the article alone, without the skin's navigation. Pages
+		// with a query (`oldid`, `action`) or in the Special namespace have no REST
+		// equivalent, so they stay as they are.
+		matches: (url) => /(^|\.)wikipedia\.org$/.test(url.hostname) && /^\/wiki\/(?!Special:)./.test(url.pathname) && url.search === '',
+		rewrite: (url) => {
+			// Titles may contain `/`, which the REST route needs encoded.
+			const title = decodeURIComponent(url.pathname.slice('/wiki/'.length));
+			url.pathname = `/w/rest.php/v1/page/${encodeURIComponent(title)}/html`;
+		},
+		// Static HTML needs no rendering. Wikimedia rate-limits API clients without a
+		// browser or policy-compliant User-Agent to 10 requests a minute, so this
+		// must go out with browser headers, never as curl.
+		fetchAs: 'default',
+	},
 ];
 
 /** Rewrite a URL to a better source, with how that source must be fetched. */
