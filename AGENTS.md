@@ -15,12 +15,14 @@ This repo uses **Bun** (see `bun.lock`). Never use npm, npx, yarn, or pnpm. Use 
 
 ## Commands
 
-| Command | Purpose |
-|---------|---------|
-| `bun install` | Install dependencies |
-| `bunx wrangler dev` | Local development |
-| `bunx wrangler deploy` | Deploy to Cloudflare |
-| `bunx wrangler types` | Generate TypeScript types |
+| Command                | Purpose                   |
+| ---------------------- | ------------------------- |
+| `bun install`          | Install dependencies      |
+| `bunx wrangler dev`    | Local development         |
+| `bunx wrangler deploy` | Deploy to Cloudflare      |
+| `bunx wrangler types`  | Generate TypeScript types |
+| `bun run lint`         | Lint with ESLint          |
+| `bun run format`       | Format with Prettier      |
 
 Run `wrangler types` after changing bindings in wrangler.jsonc.
 
@@ -30,16 +32,16 @@ When running `bunx wrangler dev`, a Local Explorer API is available for inspecti
 
 Key endpoints (relative to the dev server URL):
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /cdn-cgi/local/explorer/api/local/workers` | List local Workers and their bindings |
-| `GET /cdn-cgi/local/explorer/api/storage/kv/namespaces` | List KV namespaces |
-| `GET /cdn-cgi/local/explorer/api/d1/database` | List D1 databases |
-| `GET /cdn-cgi/local/explorer/api/r2/buckets` | List R2 buckets |
-| `GET /cdn-cgi/local/explorer/api/workers/durable_objects/namespaces` | List Durable Object namespaces |
-| `GET /cdn-cgi/local/explorer/api/workflows` | List Workflows |
-| `POST /cdn-cgi/local/explorer/api/local/observability/query` | Run a read-only SQL query (SELECT/WITH only) over captured request traces and console logs. Tables: `spans`, `logs` (read attributes via `json(attributes)`). Example: `curl -X POST <base>/cdn-cgi/local/explorer/api/local/observability/query -H 'Content-Type: application/json' -d '{"sql":"SELECT service, name, outcome, duration_ms FROM spans WHERE parent_id IS NULL LIMIT 20"}'` |
-| `POST /cdn-cgi/local/explorer/api/local/observability/clear` | Clear all captured traces and logs |
+| Endpoint                                                             | Description                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /cdn-cgi/local/explorer/api/local/workers`                      | List local Workers and their bindings                                                                                                                                                                                                                                                                                                                                                       |
+| `GET /cdn-cgi/local/explorer/api/storage/kv/namespaces`              | List KV namespaces                                                                                                                                                                                                                                                                                                                                                                          |
+| `GET /cdn-cgi/local/explorer/api/d1/database`                        | List D1 databases                                                                                                                                                                                                                                                                                                                                                                           |
+| `GET /cdn-cgi/local/explorer/api/r2/buckets`                         | List R2 buckets                                                                                                                                                                                                                                                                                                                                                                             |
+| `GET /cdn-cgi/local/explorer/api/workers/durable_objects/namespaces` | List Durable Object namespaces                                                                                                                                                                                                                                                                                                                                                              |
+| `GET /cdn-cgi/local/explorer/api/workflows`                          | List Workflows                                                                                                                                                                                                                                                                                                                                                                              |
+| `POST /cdn-cgi/local/explorer/api/local/observability/query`         | Run a read-only SQL query (SELECT/WITH only) over captured request traces and console logs. Tables: `spans`, `logs` (read attributes via `json(attributes)`). Example: `curl -X POST <base>/cdn-cgi/local/explorer/api/local/observability/query -H 'Content-Type: application/json' -d '{"sql":"SELECT service, name, outcome, duration_ms FROM spans WHERE parent_id IS NULL LIMIT 20"}'` |
+| `POST /cdn-cgi/local/explorer/api/local/observability/clear`         | Clear all captured traces and logs                                                                                                                                                                                                                                                                                                                                                          |
 
 If the routes above don't cover what you need, fetch the full OpenAPI schema (large - use only as a last resort): `GET /cdn-cgi/local/explorer/api`
 

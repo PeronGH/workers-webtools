@@ -9,12 +9,12 @@
 	"compatibility_date": "2026-09-25",
 	"compatibility_flags": ["nodejs_compat"],
 	"observability": {
-		"enabled": true
+		"enabled": true,
 	},
 	"upload_source_maps": true,
 	"ai": {
-		"binding": "AI"
-	}
+		"binding": "AI",
+	},
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

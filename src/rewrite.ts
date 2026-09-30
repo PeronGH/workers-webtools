@@ -3,7 +3,7 @@
  * curl past an Anubis challenge, `curl` fetches directly as curl only, and
  * `renderer` renders the page in Kitesurf.
  */
-export type FetchAs = "default" | "curl" | "renderer";
+export type FetchAs = 'default' | 'curl' | 'renderer';
 
 // Some sites serve JavaScript shells or block plain fetches but expose clean
 // content at a sibling URL.
@@ -20,31 +20,31 @@ function removeSuffix(value: string, suffix: string): string {
 
 const URL_REWRITES: readonly UrlRewrite[] = [
 	{
-		matches: (url) => url.hostname === "developer.apple.com" && url.pathname.startsWith("/documentation/"),
+		matches: (url) => url.hostname === 'developer.apple.com' && url.pathname.startsWith('/documentation/'),
 		rewrite: (url) => {
-			url.pathname = `/tutorials/data${removeSuffix(url.pathname, "/").toLowerCase()}.md`;
+			url.pathname = `/tutorials/data${removeSuffix(url.pathname, '/').toLowerCase()}.md`;
 		},
 		// The rewritten source is raw Markdown; a browser has nothing to render.
-		fetchAs: "default",
+		fetchAs: 'default',
 	},
 	{
-		matches: (url) => ["x.com", "www.x.com", "twitter.com", "www.twitter.com"].includes(url.hostname),
+		matches: (url) => ['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'].includes(url.hostname),
 		rewrite: (url) => {
-			url.hostname = "nitter.tiekoetter.com";
+			url.hostname = 'nitter.tiekoetter.com';
 		},
 		// Nitter serves server-rendered HTML behind an Anubis gate that only lets
 		// curl through.
-		fetchAs: "curl",
+		fetchAs: 'curl',
 	},
 	{
 		// reddit.com 403s plain fetches; eddrit serves the same paths as clean
 		// server-rendered HTML.
 		matches: (url) => /(^|\.)reddit\.com$/.test(url.hostname),
 		rewrite: (url) => {
-			url.hostname = "eddrit.com";
+			url.hostname = 'eddrit.com';
 		},
 		// Same Anubis gate as Nitter.
-		fetchAs: "curl",
+		fetchAs: 'curl',
 	},
 ];
 
