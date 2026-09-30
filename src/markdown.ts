@@ -53,6 +53,13 @@ const TABLE_ROW = /^\s*\|.*\|\s*$/;
 const TABLE_DELIMITER_ROW = /^\s*\|[\s|:-]+\|\s*$/;
 // Link and image targets, which the conversion always makes absolute.
 const LINK_TARGET = /\]\(([^\s)]+)/g;
+// A non-image link whose text could be its own target, e.g. `[https://a.b](https://a.b)`.
+const BARE_LINK = /(?<!!)\[([^[\]\s]+)\]\(([^\s)]+)\)/g;
+const MARKDOWN_ESCAPE = /\\([!-/:-@[-`{-~])/g;
+
+function unescapeUnderscores(target: string): string {
+	return target.replace(/%5F/gi, '_');
+}
 
 /**
  * Collapse the column padding the conversion adds to tables: `| x | y      |`
@@ -68,15 +75,24 @@ function collapseTablePadding(line: string): string {
 	return line.replace(/ {2,}\|/g, ' |').replace(/\| {2,}/g, '| ');
 }
 
+/** Turn `[url](url)` into the autolink `<url>`, which says the same thing once. */
+function autolinkBareUrls(line: string): string {
+	return line.replace(BARE_LINK, (link, text: string, target: string) => {
+		const url = unescapeUnderscores(target);
+		return text.replace(MARKDOWN_ESCAPE, '$1') === url ? `<${url}>` : link;
+	});
+}
+
 /**
- * Tidy converted Markdown outside fenced code: collapse table padding, undo the
- * conversion's needless `%5F` escaping of `_`, and shorten links within the
- * origin of `base` to root-relative paths, which resolve against `base` exactly.
+ * Tidy converted Markdown outside fenced code: collapse table padding, write
+ * links whose text is their URL as autolinks, undo the conversion's needless
+ * `%5F` escaping of `_`, and shorten links within the origin of `base` to
+ * root-relative paths, which resolve against `base` exactly.
  */
 export function tidyMarkdown(markdown: string, base: string): string {
 	const { origin } = new URL(base);
 	const shorten = (target: string) => {
-		const unescaped = target.replace(/%5F/gi, '_');
+		const unescaped = unescapeUnderscores(target);
 		if (unescaped === origin) return '/';
 		return unescaped.startsWith(`${origin}/`) ? unescaped.slice(origin.length) : unescaped;
 	};
@@ -87,7 +103,8 @@ export function tidyMarkdown(markdown: string, base: string): string {
 		.map((line) => {
 			if (FENCE.test(line)) inFence = !inFence;
 			if (inFence) return line;
-			return collapseTablePadding(line.replace(LINK_TARGET, (_, target: string) => `](${shorten(target)}`));
+			const linked = autolinkBareUrls(line).replace(LINK_TARGET, (_, target: string) => `](${shorten(target)}`);
+			return collapseTablePadding(linked);
 		})
 		.join('\n');
 }
