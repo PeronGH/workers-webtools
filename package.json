@@ -15,7 +15,6 @@
 	},
 	"dependencies": {
 		"@modelcontextprotocol/server": "2.0.0",
-		"@peron_js/web-cli": "^2.4.0",
 		"@pixel/socket-fetch": "npm:@jsr/pixel__socket-fetch@^0.2.0",
 		"agents": "^0.24.0",
 		"zod": "^4.6.5"

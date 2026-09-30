@@ -1,11 +1,11 @@
 # webtools
 
-A stateless [MCP](https://modelcontextprotocol.io/) server on Cloudflare Workers that lets agents search and fetch the web. The tools come from [`@peron_js/web-cli`](https://www.npmjs.com/package/@peron_js/web-cli).
+A stateless [MCP](https://modelcontextprotocol.io/) server on Cloudflare Workers that lets agents search and fetch the web.
 
 | Tool | Parameters | Returns |
 |------|------------|---------|
 | `web_search` | `query`, `pages` of 20 results (default 1, max 6) | Numbered Markdown list of results with title, URL, and snippet |
-| `web_fetch` | `url`, `render` (headless browser) | Web pages as Markdown, other text as is, images as image content |
+| `web_fetch` | `url`, `render` (headless browser) | Web pages and PDFs as Markdown, other text as is, images as image content |
 
 The endpoint has no authentication.
 
