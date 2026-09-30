@@ -71,10 +71,10 @@ function collapseTablePadding(line: string): string {
 /**
  * Tidy converted Markdown outside fenced code: collapse table padding, undo the
  * conversion's needless `%5F` escaping of `_`, and shorten links within the
- * page's origin to root-relative paths.
+ * origin of `base` to root-relative paths, which resolve against `base` exactly.
  */
-export function tidyMarkdown(markdown: string, url: string): string {
-	const { origin } = new URL(url);
+export function tidyMarkdown(markdown: string, base: string): string {
+	const { origin } = new URL(base);
 	const shorten = (target: string) => {
 		const unescaped = target.replace(/%5F/gi, '_');
 		if (unescaped === origin) return '/';

@@ -45,7 +45,7 @@ function createServer() {
 		{
 			title: 'Web Fetch',
 			description:
-				'Fetch a URL and return its content: web pages and PDFs as Markdown, other text as is, and images as images. Links within the same site are root-relative (/path); resolve them against the fetched URL. Pages that render their content with JavaScript come back empty from a direct fetch; retry those with render: true.',
+				'Fetch a URL and return its content: web pages and PDFs as Markdown, other text as is, and images as images. Pages that render their content with JavaScript come back empty from a direct fetch; retry those with render: true.',
 			inputSchema: {
 				url: z.string().describe('The URL to fetch'),
 				render: z.boolean().default(false).describe('Render the page in a headless browser (slow)'),

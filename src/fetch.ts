@@ -58,13 +58,29 @@ async function toMarkdown(url: string, document: MarkdownDocument, conversionOpt
 	return result.data;
 }
 
-async function htmlToMarkdown(html: string, url: string): Promise<string> {
+/**
+ * Convert a page served from `url`. Links are shortened against `target`, the
+ * URL the agent asked for, so they resolve back to the same place whatever
+ * redirects or rewrites happened in between.
+ */
+async function htmlToMarkdown(html: string, url: string, target: string): Promise<string> {
 	const blob = new Blob([html], { type: 'text/html' });
-	return tidyMarkdown(await toMarkdown(url, { name: 'page.html', blob }, { html: { hostname: url } }), url);
+	return tidyMarkdown(await toMarkdown(url, { name: 'page.html', blob }, { html: { hostname: url } }), target);
 }
 
 function pdfToMarkdown(pdf: Uint8Array<ArrayBuffer>, url: string): Promise<string> {
 	return toMarkdown(url, { name: 'document.pdf', blob: new Blob([pdf], { type: 'application/pdf' }) });
+}
+
+// Tells the agent where a redirect landed, e.g. the article behind a short link.
+// Compared against the rewritten URL, since our own rewrites aren't redirects.
+function redirectNote(fetched: string, served: string): string {
+	const withoutHash = (url: string) => {
+		const parsed = new URL(url);
+		parsed.hash = '';
+		return parsed.href;
+	};
+	return withoutHash(fetched) === withoutHash(served) ? '' : `Redirected to: ${served}\n\n`;
 }
 
 /** Fetch a URL and return web pages and PDFs as Markdown, other text as is, and images as bytes. */
@@ -74,11 +90,13 @@ export async function fetchContent(target: string, render: boolean, signal: Abor
 
 	if (fetchAs === 'renderer') {
 		const { html } = await cleanHtml(await renderHtml(url, deadline));
-		return { type: 'text', text: await htmlToMarkdown(html, url) };
+		return { type: 'text', text: await htmlToMarkdown(html, url, target) };
 	}
 
 	let page = await fetchPage(url, fetchAs === 'curl' ? CURL_HEADERS : BROWSER_HEADERS, deadline);
-	if (isPdf(page)) return { type: 'text', text: await pdfToMarkdown(page.body, page.url) };
+	if (isPdf(page)) {
+		return { type: 'text', text: redirectNote(url, page.url) + (await pdfToMarkdown(page.body, page.url)) };
+	}
 	if (!isHtml(page.contentType)) return nonHtmlContent(url, page);
 
 	let cleaned = await cleanHtml(page.body);
@@ -87,5 +105,5 @@ export async function fetchContent(target: string, render: boolean, signal: Abor
 		page = await fetchPage(url, CURL_HEADERS, deadline);
 		cleaned = await cleanHtml(page.body);
 	}
-	return { type: 'text', text: await htmlToMarkdown(cleaned.html, page.url) };
+	return { type: 'text', text: redirectNote(url, page.url) + (await htmlToMarkdown(cleaned.html, page.url, target)) };
 }
