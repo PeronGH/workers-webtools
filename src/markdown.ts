@@ -1,4 +1,5 @@
 // Token savers around Workers AI's HTML conversion, which already drops <nav>.
+// The cleaning pass also spots Anubis challenges, sparing a second parse.
 
 const REMOVED_ELEMENTS = [
 	// Hidden content: mobile menu duplicates, modals, templates.
@@ -14,13 +15,29 @@ const REMOVED_ELEMENTS = [
 	'aside',
 ];
 
-/** Strip hidden content and non-<nav> navigation before conversion. */
-export function cleanHtml(html: string): Promise<string> {
+/** HTML stripped of hidden content and non-<nav> navigation, ready for conversion. */
+export interface CleanedHtml {
+	html: string;
+	/**
+	 * Whether the page is Anubis's proof-of-work interstitial, which carries a
+	 * `<script id="anubis_challenge">` payload instead of the page.
+	 */
+	anubisChallenge: boolean;
+}
+
+/** Clean a page before conversion, spotting an Anubis challenge in the same pass. */
+export async function cleanHtml(body: string | Uint8Array<ArrayBuffer>): Promise<CleanedHtml> {
+	let anubisChallenge = false;
 	const rewriter = REMOVED_ELEMENTS.reduce(
 		(rewriter, selector) => rewriter.on(selector, { element: (element) => void element.remove() }),
-		new HTMLRewriter(),
+		new HTMLRewriter().on('script#anubis_challenge', {
+			element: () => {
+				anubisChallenge = true;
+			},
+		}),
 	);
-	return rewriter.transform(new Response(html)).text();
+	const html = await rewriter.transform(new Response(body)).text();
+	return { html, anubisChallenge };
 }
 
 const FENCE = /^\s*(```|~~~)/;

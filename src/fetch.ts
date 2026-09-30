@@ -35,11 +35,6 @@ function looksBinary(text: string): boolean {
 	return replacements > text.length * 0.1;
 }
 
-// Anubis serves a proof-of-work interstitial carrying a `<script
-// id="anubis_challenge">` payload instead of the page; requiring a real
-// `<script` tag keeps escaped mentions in page text from matching.
-const ANUBIS_CHALLENGE = /<script\b[^>]*\bid=["']?anubis_challenge["'\s>]/i;
-
 // SVG is XML, so it stays text.
 function imageMimeType(contentType: string): string | undefined {
 	const mimeType = contentType.split(';')[0].trim();
@@ -64,7 +59,7 @@ async function toMarkdown(url: string, document: MarkdownDocument, conversionOpt
 }
 
 async function htmlToMarkdown(html: string, url: string): Promise<string> {
-	const blob = new Blob([await cleanHtml(html)], { type: 'text/html' });
+	const blob = new Blob([html], { type: 'text/html' });
 	return collapseTablePadding(await toMarkdown(url, { name: 'page.html', blob }, { html: { hostname: url } }));
 }
 
@@ -78,18 +73,19 @@ export async function fetchContent(target: string, render: boolean, signal: Abor
 	const deadline = AbortSignal.any([AbortSignal.timeout(FETCH_TIMEOUT_MS), signal]);
 
 	if (fetchAs === 'renderer') {
-		return { type: 'text', text: await htmlToMarkdown(await renderHtml(url, deadline), url) };
+		const { html } = await cleanHtml(await renderHtml(url, deadline));
+		return { type: 'text', text: await htmlToMarkdown(html, url) };
 	}
 
 	let page = await fetchPage(url, fetchAs === 'curl' ? CURL_HEADERS : BROWSER_HEADERS, deadline);
 	if (isPdf(page)) return { type: 'text', text: await pdfToMarkdown(page.body, page.url) };
 	if (!isHtml(page.contentType)) return nonHtmlContent(url, page);
 
-	let html = new TextDecoder().decode(page.body);
+	let cleaned = await cleanHtml(page.body);
 	// Anubis only challenges browser-like clients; refetch as curl to slip past.
-	if (fetchAs === 'default' && ANUBIS_CHALLENGE.test(html)) {
+	if (fetchAs === 'default' && cleaned.anubisChallenge) {
 		page = await fetchPage(url, CURL_HEADERS, deadline);
-		html = new TextDecoder().decode(page.body);
+		cleaned = await cleanHtml(page.body);
 	}
-	return { type: 'text', text: await htmlToMarkdown(html, page.url) };
+	return { type: 'text', text: await htmlToMarkdown(cleaned.html, page.url) };
 }
