@@ -1,5 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { BROWSER_HEADERS, CURL_HEADERS, fetchPage, type Page, renderHtml } from './http';
+import { cleanHtml, collapseTablePadding } from './markdown';
 import { rewriteUrl } from './rewrite';
 
 /**
@@ -62,8 +63,9 @@ async function toMarkdown(url: string, document: MarkdownDocument, conversionOpt
 	return result.data;
 }
 
-function htmlToMarkdown(html: string, url: string): Promise<string> {
-	return toMarkdown(url, { name: 'page.html', blob: new Blob([html], { type: 'text/html' }) }, { html: { hostname: url } });
+async function htmlToMarkdown(html: string, url: string): Promise<string> {
+	const blob = new Blob([await cleanHtml(html)], { type: 'text/html' });
+	return collapseTablePadding(await toMarkdown(url, { name: 'page.html', blob }, { html: { hostname: url } }));
 }
 
 function pdfToMarkdown(pdf: Uint8Array<ArrayBuffer>, url: string): Promise<string> {
