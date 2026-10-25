@@ -38,15 +38,12 @@ const socketFetch = createFetcher({
 	connectTls: (address) => connect(address, { secureTransport: 'on', allowHalfOpen: false }),
 });
 
-// Statuses a bot filter answers with when it rejects the socket client (HTTP/1.1,
-// its own TLS handshake) but may let Workers' `fetch` through.
-const BLOCKED_STATUSES = new Set([401, 403, 429]);
-
 /**
  * Fetch over a raw TCP socket so the origin sees only our headers: Workers'
  * `fetch` adds `CF-Worker`, which alone makes Anubis challenge the request.
  * Sockets cannot reach Cloudflare's own IPs, so those fall back to `fetch`, as
- * do responses that look like a block of the socket client.
+ * do non-ok responses, since bot filters may reject the socket client (HTTP/1.1,
+ * its own TLS handshake) with any status yet let `fetch` through.
  */
 export const directFetch: typeof fetch = async (input, init) => {
 	let response: Response;
@@ -55,7 +52,7 @@ export const directFetch: typeof fetch = async (input, init) => {
 	} catch {
 		return fetch(input, init);
 	}
-	if (!BLOCKED_STATUSES.has(response.status)) return response;
+	if (response.ok) return response;
 	await response.body?.cancel();
 	return fetch(input, init);
 };
